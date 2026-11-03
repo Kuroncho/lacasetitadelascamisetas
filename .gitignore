@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.DS_Store
+.claude/settings.local.json
+datos/
+.syncthing.*.tmp
+~syncthing~*.tmp
+.env
+.env.*
+!.env.example
