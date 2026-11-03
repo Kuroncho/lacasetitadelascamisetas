@@ -1,4 +1,4 @@
-# La Casetita de las Camisetas
+# La Caserita de las Camisetas
 
 Sistema de ventas, inventario y usuarios para la tienda de Marisol Mena.
 Trabajo de Programación Orientada a Objetos, Analista Programador, Duoc UC.

@@ -1,3 +1,3 @@
 """
-Modelos del negocio: La Casetita de las Camisetas.
+Modelos del negocio: La Caserita de las Camisetas.
 """

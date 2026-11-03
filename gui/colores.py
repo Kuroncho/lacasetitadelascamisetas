@@ -1,6 +1,6 @@
 """
 Definición de Paleta de Colores Pasteles
-Proyecto: La Casetita de las Camisetas
+Proyecto: La Caserita de las Camisetas
 Cliente: Requerimiento de colores suaves y armoniosos en escala pastel.
 """
 

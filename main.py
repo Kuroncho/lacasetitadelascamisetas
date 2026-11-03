@@ -1,5 +1,5 @@
 """
-La Casetita de las Camisetas: sistema de ventas e inventario.
+La Caserita de las Camisetas: sistema de ventas e inventario.
 Para ejecutar: py main.py
 """
 

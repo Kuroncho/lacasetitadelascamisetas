@@ -16,7 +16,7 @@ class PantallaLogin(tk.Frame):
         self.al_ingresar = al_ingresar  # Función que recibe al empleado que ingresó
 
         tk.Label(self, text="🧵", font=("Segoe UI", 40), bg=colores.BG_VENTANA).place(relx=0.5, rely=0.17, anchor="center")
-        crear_etiqueta(self, "LA CASETITA DE LAS CAMISETAS", FUENTE_ENCABEZADO).place(relx=0.5, rely=0.26, anchor="center")
+        crear_etiqueta(self, "LA CASERITA DE LAS CAMISETAS", FUENTE_ENCABEZADO).place(relx=0.5, rely=0.26, anchor="center")
 
         caja = crear_tarjeta(self, "Iniciar sesión")
         caja.place(relx=0.5, rely=0.48, anchor="center")

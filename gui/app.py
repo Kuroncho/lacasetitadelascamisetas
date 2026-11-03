@@ -19,7 +19,7 @@ class Aplicacion(tk.Tk):
     def __init__(self, tienda):
         super().__init__()
         self.tienda = tienda
-        self.title("La Casetita de las Camisetas")
+        self.title("La Caserita de las Camisetas")
         self.geometry("1100x760")
         self.minsize(1000, 720)
         self.configure(bg=colores.BG_VENTANA)
@@ -137,7 +137,7 @@ class Aplicacion(tk.Tk):
         titulos = tk.Frame(encabezado, bg=colores.BG_HEADER)
         titulos.pack(side="left")
         tk.Label(
-            titulos, text="LA CASETITA DE LAS CAMISETAS", font=FUENTE_ENCABEZADO,
+            titulos, text="LA CASERITA DE LAS CAMISETAS", font=FUENTE_ENCABEZADO,
             bg=colores.BG_HEADER, fg=colores.FG_HEADER,
         ).pack(anchor="w")
         tk.Label(

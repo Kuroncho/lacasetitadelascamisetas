@@ -1,3 +1,3 @@
 """
-Interfaz gráfica: La Casetita de las Camisetas.
+Interfaz gráfica: La Caserita de las Camisetas.
 """
