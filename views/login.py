@@ -5,14 +5,14 @@ Pantalla de inicio de sesión.
 import tkinter as tk
 from tkinter import messagebox
 
-from gui import colores
-from gui.componentes import FUENTE, FUENTE_ENCABEZADO, crear_boton, crear_etiqueta, crear_tarjeta
+from views import colores
+from views.componentes import FUENTE, FUENTE_ENCABEZADO, crear_boton, crear_etiqueta, crear_tarjeta
 
 
 class PantallaLogin(tk.Frame):
-    def __init__(self, padre, tienda, al_ingresar):
+    def __init__(self, padre, controladores, al_ingresar):
         super().__init__(padre, bg=colores.BG_VENTANA)
-        self.tienda = tienda
+        self.controladores = controladores
         self.al_ingresar = al_ingresar  # Función que recibe al empleado que ingresó
 
         tk.Label(self, text="🧵", font=("Segoe UI", 40), bg=colores.BG_VENTANA).place(relx=0.5, rely=0.17, anchor="center")
@@ -45,7 +45,7 @@ class PantallaLogin(tk.Frame):
 
     def ingresar(self):
         try:
-            empleado = self.tienda.iniciar_sesion(self.txt_usuario.get(), self.txt_clave.get())
+            empleado = self.controladores.usuarios.iniciar_sesion(self.txt_usuario.get(), self.txt_clave.get())
         except ValueError as error:
             messagebox.showerror("No se pudo ingresar", str(error))
             self.txt_clave.delete(0, tk.END)

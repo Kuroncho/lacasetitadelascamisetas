@@ -5,8 +5,8 @@ Pestaña de inventario, solo para administradores: crear prendas, ajustar stock 
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from gui import colores
-from gui.componentes import (
+from views import colores
+from views.componentes import (
     FUENTE,
     crear_boton,
     crear_etiqueta,
@@ -16,20 +16,20 @@ from gui.componentes import (
     llenar_tabla,
 )
 from models.prenda import TALLAS, PrendaEstandar, PrendaTermica, RopaInterior
-from models.validaciones import formato_clp, texto_a_entero
+from models.validaciones import formato_clp
 
-# Por cada tipo de prenda: la clase y sus características (título y opciones)
+# Por cada tipo de prenda: sus características propias (título y opciones)
 TIPOS_PRENDA = {
-    PrendaTermica.TIPO: (PrendaTermica, [("Cuello:", PrendaTermica.CUELLOS), ("Retención:", PrendaTermica.NIVELES)]),
-    PrendaEstandar.TIPO: (PrendaEstandar, [("Manga:", PrendaEstandar.MANGAS)]),
-    RopaInterior.TIPO: (RopaInterior, [("Elástico:", RopaInterior.ELASTICOS), ("Ajuste:", RopaInterior.AJUSTES)]),
+    PrendaTermica.TIPO: [("Cuello:", PrendaTermica.CUELLOS), ("Retención:", PrendaTermica.NIVELES)],
+    PrendaEstandar.TIPO: [("Manga:", PrendaEstandar.MANGAS)],
+    RopaInterior.TIPO: [("Elástico:", RopaInterior.ELASTICOS), ("Ajuste:", RopaInterior.AJUSTES)],
 }
 
 
 class PestanaInventario(tk.Frame):
-    def __init__(self, padre, tienda):
+    def __init__(self, padre, controladores):
         super().__init__(padre, bg=colores.BG_VENTANA, padx=12, pady=12)
-        self.tienda = tienda
+        self.ctrl = controladores.inventario
 
         tarjeta = crear_tarjeta(self, "Nueva prenda")
         tarjeta.pack(fill="x", pady=(0, 10))
@@ -106,12 +106,12 @@ class PestanaInventario(tk.Frame):
         llenar_tabla(self.tabla, [
             (p.codigo, (p.codigo, p.obtener_tipo(), p.descripcion, p.detalle(), formato_clp(p.precio_base),
                         formato_clp(p.calcular_precio_final()), p.stock))
-            for p in self.tienda.prendas
+            for p in self.ctrl.prendas
         ])
 
     def cambiar_tipo(self):
         """Muestra las características que corresponden al tipo de prenda elegido."""
-        extras = TIPOS_PRENDA[self.cmb_tipo.get()][1]
+        extras = TIPOS_PRENDA[self.cmb_tipo.get()]
         for indice, (etiqueta, combo) in enumerate([(self.lbl_extra1, self.cmb_extra1), (self.lbl_extra2, self.cmb_extra2)]):
             if indice < len(extras):
                 etiqueta.config(text=extras[indice][0])
@@ -123,18 +123,12 @@ class PestanaInventario(tk.Frame):
                 combo.config(values=[], state="disabled")
 
     def agregar(self):
-        clase = TIPOS_PRENDA[self.cmb_tipo.get()][0]
         extras = [combo.get() for combo in (self.cmb_extra1, self.cmb_extra2) if combo.get()]
         try:
-            prenda = clase(
-                self.txt_codigo.get(),
-                self.txt_nombre.get(),
-                self.cmb_talla.get(),
-                texto_a_entero(self.txt_precio.get(), "El precio"),
-                texto_a_entero(self.txt_stock.get(), "El stock"),
-                *extras,
+            self.ctrl.crear_prenda(
+                self.cmb_tipo.get(), self.txt_codigo.get(), self.txt_nombre.get(), self.cmb_talla.get(),
+                self.txt_precio.get(), self.txt_stock.get(), *extras,
             )
-            self.tienda.agregar_prenda(prenda)
         except ValueError as error:
             messagebox.showerror("Dato inválido", str(error))
             return
@@ -153,7 +147,7 @@ class PestanaInventario(tk.Frame):
         if codigo is None:
             return
         try:
-            self.tienda.ajustar_stock(codigo, diferencia)
+            self.ctrl.ajustar_stock(codigo, diferencia)
         except ValueError:
             messagebox.showerror("Stock insuficiente", "El stock no puede quedar negativo.")
             return
@@ -164,7 +158,7 @@ class PestanaInventario(tk.Frame):
         if codigo is None:
             return
         try:
-            self.tienda.cambiar_precio(codigo, texto_a_entero(self.txt_nuevo_precio.get(), "El precio"))
+            self.ctrl.cambiar_precio(codigo, self.txt_nuevo_precio.get())
         except ValueError as error:
             messagebox.showerror("Dato inválido", str(error))
             return
@@ -176,7 +170,7 @@ class PestanaInventario(tk.Frame):
         if codigo is None or not messagebox.askyesno("Eliminar prenda", f"¿Desea eliminar la prenda {codigo}?"):
             return
         try:
-            self.tienda.eliminar_prenda(codigo)
+            self.ctrl.eliminar_prenda(codigo)
         except ValueError as error:
             messagebox.showerror("No se pudo eliminar", str(error))
             return

@@ -5,7 +5,8 @@ Piezas de interfaz que se repiten en todas las pestañas.
 import tkinter as tk
 from tkinter import ttk
 
-from gui import colores
+from views import colores
+from views.texto_boleta import generar_boleta
 
 FUENTE = ("Segoe UI", 11)
 FUENTE_BOTON = ("Segoe UI", 11, "bold")
@@ -81,7 +82,7 @@ def mostrar_boleta(padre, venta):
         bg=colores.BG_HEADER, fg=colores.FG_HEADER,
     ).pack()
     texto = tk.Text(ventana, font=("Courier New", 11), width=52, height=28, bg=colores.BG_TARJETA, relief="flat", highlightthickness=0, padx=8, pady=8)
-    texto.insert("1.0", venta.generar_boleta())
+    texto.insert("1.0", generar_boleta(venta))
     texto.configure(state="disabled")
     texto.pack(padx=12, pady=12, fill="both", expand=True)
     crear_boton(ventana, "Cerrar", ventana.destroy, "ROSA").pack(pady=(0, 12))

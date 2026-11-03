@@ -5,8 +5,8 @@ Pestaña de usuarios, solo para administradores: crear, cambiar clave y eliminar
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from gui import colores
-from gui.componentes import (
+from views import colores
+from views.componentes import (
     FUENTE,
     crear_boton,
     crear_etiqueta,
@@ -18,9 +18,9 @@ from gui.componentes import (
 
 
 class PestanaUsuarios(tk.Frame):
-    def __init__(self, padre, tienda, empleado):
+    def __init__(self, padre, controladores, empleado):
         super().__init__(padre, bg=colores.BG_VENTANA, padx=12, pady=12)
-        self.tienda = tienda
+        self.ctrl = controladores.usuarios
         self.empleado = empleado
 
         tarjeta = crear_tarjeta(self, "Datos del usuario")
@@ -57,12 +57,12 @@ class PestanaUsuarios(tk.Frame):
 
     def refrescar(self):
         llenar_tabla(self.tabla, [
-            (e.usuario, (e.usuario, e.nombre, e.rut, e.obtener_rol())) for e in self.tienda.usuarios
+            (e.usuario, (e.usuario, e.nombre, e.rut, e.obtener_rol())) for e in self.ctrl.usuarios
         ])
 
     def crear(self):
         try:
-            self.tienda.crear_usuario(
+            self.ctrl.crear_usuario(
                 self.cmb_rol.get(),
                 self.campos["rut"].get(),
                 self.campos["nombre"].get(),
@@ -83,7 +83,7 @@ class PestanaUsuarios(tk.Frame):
             messagebox.showinfo("Atención", "Seleccione un usuario de la tabla.")
             return
         try:
-            self.tienda.cambiar_clave(usuario, self.campos["clave"].get())
+            self.ctrl.cambiar_clave(usuario, self.campos["clave"].get())
         except ValueError as error:
             messagebox.showerror("Dato inválido", str(error))
             return
@@ -98,7 +98,7 @@ class PestanaUsuarios(tk.Frame):
         if not messagebox.askyesno("Eliminar usuario", f"¿Desea eliminar a {usuario}?"):
             return
         try:
-            self.tienda.eliminar_usuario(usuario, self.empleado)
+            self.ctrl.eliminar_usuario(usuario, self.empleado)
         except ValueError as error:
             messagebox.showerror("No se pudo eliminar", str(error))
             return

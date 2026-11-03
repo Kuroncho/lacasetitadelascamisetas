@@ -5,8 +5,8 @@ Pestaña para registrar clientes y consultar su historial de compras.
 import tkinter as tk
 from tkinter import messagebox
 
-from gui import colores
-from gui.componentes import (
+from views import colores
+from views.componentes import (
     FUENTE,
     crear_boton,
     crear_etiqueta,
@@ -19,9 +19,10 @@ from models.validaciones import formato_clp
 
 
 class PestanaClientes(tk.Frame):
-    def __init__(self, padre, tienda):
+    def __init__(self, padre, controladores):
         super().__init__(padre, bg=colores.BG_VENTANA, padx=12, pady=12)
-        self.tienda = tienda
+        self.ctrl_clientes = controladores.clientes
+        self.ctrl_ventas = controladores.ventas
 
         tarjeta = crear_tarjeta(self, "Datos del cliente")
         tarjeta.pack(fill="x", pady=(0, 10))
@@ -61,15 +62,15 @@ class PestanaClientes(tk.Frame):
 
     def refrescar(self):
         filas = []
-        for cliente in self.tienda.clientes:
-            beneficio = "Cliente frecuente" if self.tienda.es_cliente_frecuente(cliente.rut) else "-"
+        for cliente in self.ctrl_clientes.clientes:
+            beneficio = "Cliente frecuente" if self.ctrl_ventas.es_cliente_frecuente(cliente.rut) else "-"
             filas.append((cliente.rut, (cliente.rut, cliente.nombre, cliente.telefono, cliente.correo, beneficio)))
         llenar_tabla(self.tabla, filas)
         self._mostrar_historial()
 
     def _mostrar_historial(self):
         rut = fila_seleccionada(self.tabla)
-        ventas = self.tienda.historial_cliente(rut) if rut else []
+        ventas = self.ctrl_ventas.historial_cliente(rut) if rut else []
         llenar_tabla(self.tabla_historial, [
             (str(v.folio), (v.folio, v.fecha.strftime("%d-%m-%Y %H:%M"), v.estado, formato_clp(v.calcular_total())))
             for v in ventas
@@ -77,7 +78,7 @@ class PestanaClientes(tk.Frame):
 
     def mostrar_seleccionado(self):
         """Copia los datos del cliente seleccionado al formulario."""
-        cliente = self.tienda.buscar_cliente(fila_seleccionada(self.tabla))
+        cliente = self.ctrl_clientes.buscar(fila_seleccionada(self.tabla))
         if cliente:
             for clave in self.campos:
                 self.campos[clave].delete(0, tk.END)
@@ -93,7 +94,7 @@ class PestanaClientes(tk.Frame):
 
     def registrar(self):
         try:
-            self.tienda.registrar_cliente(*self._datos_formulario())
+            self.ctrl_clientes.registrar(*self._datos_formulario())
         except ValueError as error:
             messagebox.showerror("Dato inválido", str(error))
             return
@@ -108,10 +109,7 @@ class PestanaClientes(tk.Frame):
             messagebox.showinfo("Atención", "Seleccione un cliente de la tabla.")
             return
         try:
-            datos = self._datos_formulario()
-            if self.tienda.buscar_cliente(rut).rut != datos[0].replace(".", "").strip().upper():
-                raise ValueError("El RUT de un cliente no se puede cambiar.")
-            self.tienda.actualizar_cliente(*datos)
+            self.ctrl_clientes.actualizar(rut, *self._datos_formulario())
         except ValueError as error:
             messagebox.showerror("Dato inválido", str(error))
             return
@@ -126,7 +124,7 @@ class PestanaClientes(tk.Frame):
         if not messagebox.askyesno("Eliminar cliente", "¿Desea eliminar este cliente?"):
             return
         try:
-            self.tienda.eliminar_cliente(rut)
+            self.ctrl_clientes.eliminar(rut)
         except ValueError as error:
             messagebox.showerror("No se pudo eliminar", str(error))
             return

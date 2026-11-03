@@ -9,7 +9,7 @@ from datetime import datetime
 from .excepciones import SinStockException
 from .prenda import Prenda
 from .usuario import Cliente
-from .validaciones import formato_clp, validar_entero
+from .validaciones import validar_entero
 
 TASA_IVA = 19  # Los precios de la tienda ya incluyen IVA
 
@@ -170,33 +170,6 @@ class Venta:
         if self._estado != EstadoVenta.PAGADA:
             raise ValueError("Solo se puede cancelar una venta pagada que no se haya entregado.")
         self._estado = EstadoVenta.CANCELADA
-
-    def generar_boleta(self) -> str:
-        lineas = [
-            "=" * 50,
-            "CONFECCIONES MARISOL MENA".center(50),
-            "=" * 50,
-            f"Folio N°:  {self._folio}",
-            f"Fecha:     {self._fecha.strftime('%d-%m-%Y %H:%M')}",
-            f"Vendedor:  {self._vendedor}",
-            f"Cliente:   {self._cliente_nombre} (RUT {self._cliente_rut})",
-            f"Estado:    {self._estado}",
-            "-" * 50,
-        ]
-        for detalle in self._detalles:
-            lineas.append(f"{detalle.cantidad} x {detalle.descripcion}")
-            lineas.append(f"{formato_clp(detalle.subtotal):>50}")
-        lineas.append("-" * 50)
-        lineas.append(f"{'Subtotal:':<30}{formato_clp(self.calcular_subtotal()):>20}")
-        lineas.append(f"{'Descuento cliente frecuente:':<30}{'-' + formato_clp(self.calcular_descuento()):>20}")
-        lineas.append(f"{'TOTAL A PAGAR:':<30}{formato_clp(self.calcular_total()):>20}")
-        lineas.append(f"{'  Neto incluido:':<30}{formato_clp(self.calcular_neto()):>20}")
-        lineas.append(f"{'  IVA incluido (19%):':<30}{formato_clp(self.calcular_iva()):>20}")
-        lineas.append("-" * 50)
-        lineas.append(f"Pago: {self._medio_pago}")
-        lineas.append(self._comprobante)
-        lineas.append("=" * 50)
-        return "\n".join(lineas)
 
     def a_dict(self) -> dict:
         return {

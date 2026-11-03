@@ -5,8 +5,8 @@ Pestaña para armar el carro y cobrar una venta.
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from gui import colores
-from gui.componentes import (
+from views import colores
+from views.componentes import (
     FUENTE,
     FUENTE_TITULO,
     crear_boton,
@@ -18,9 +18,7 @@ from gui.componentes import (
     mostrar_boleta,
 )
 from models.excepciones import PagoRechazadoException, SinStockException
-from models.pago import Efectivo, TarjetaDebito, Transferencia
-from models.validaciones import formato_clp, texto_a_entero
-from models.venta import Venta
+from models.validaciones import formato_clp
 
 ETIQUETAS_PAGO = {
     "Efectivo": "Monto recibido ($):",
@@ -30,11 +28,13 @@ ETIQUETAS_PAGO = {
 
 
 class PestanaVentas(tk.Frame):
-    def __init__(self, padre, tienda, empleado):
+    def __init__(self, padre, controladores, empleado):
         super().__init__(padre, bg=colores.BG_VENTANA, padx=12, pady=12)
-        self.tienda = tienda
+        self.ctrl = controladores.ventas
+        self.ctrl_clientes = controladores.clientes
+        self.ctrl_inventario = controladores.inventario
         self.empleado = empleado
-        self.venta = Venta(empleado.nombre)
+        self.venta = self.ctrl.nueva_venta(empleado)
         self.lista_clientes = []
         self.lista_prendas = []
 
@@ -117,7 +117,7 @@ class PestanaVentas(tk.Frame):
 
     def refrescar(self):
         """Actualiza las listas y los totales con los datos actuales de la tienda."""
-        self.lista_clientes = self.tienda.clientes
+        self.lista_clientes = self.ctrl_clientes.clientes
         self.cmb_cliente["values"] = [f"{c.nombre} (RUT {c.rut})" for c in self.lista_clientes]
         indice = next((i for i, c in enumerate(self.lista_clientes) if c.rut == self.venta.cliente_rut), -1)
         if indice >= 0:
@@ -125,7 +125,7 @@ class PestanaVentas(tk.Frame):
         else:
             self.cmb_cliente.set("")
 
-        self.lista_prendas = self.tienda.prendas
+        self.lista_prendas = self.ctrl_inventario.prendas
         anterior = self.cmb_prenda.current()
         self.cmb_prenda["values"] = [
             f"{p.codigo} | {p.descripcion} | {formato_clp(p.calcular_precio_final())} | "
@@ -151,7 +151,7 @@ class PestanaVentas(tk.Frame):
     def seleccionar_cliente(self):
         indice = self.cmb_cliente.current()
         if indice >= 0:
-            self.tienda.asignar_cliente(self.venta, self.lista_clientes[indice])
+            self.ctrl.asignar_cliente(self.venta, self.lista_clientes[indice].rut)
             self.refrescar()
 
     def cambiar_medio_pago(self):
@@ -164,8 +164,7 @@ class PestanaVentas(tk.Frame):
             messagebox.showwarning("Atención", "Seleccione una prenda.")
             return
         try:
-            cantidad = texto_a_entero(self.txt_cantidad.get(), "La cantidad")
-            self.venta.agregar_prenda(self.lista_prendas[indice], cantidad)
+            self.ctrl.agregar_prenda(self.venta, self.lista_prendas[indice].codigo, self.txt_cantidad.get())
         except SinStockException as error:
             messagebox.showwarning("Sin stock", str(error))
             return
@@ -181,27 +180,18 @@ class PestanaVentas(tk.Frame):
         if fila is None:
             messagebox.showinfo("Atención", "Seleccione una prenda del carro.")
             return
-        self.venta.quitar_detalle(int(fila))
+        self.ctrl.quitar_detalle(self.venta, int(fila))
         self.refrescar()
 
     def vaciar(self):
         if self.venta.detalles and messagebox.askyesno("Vaciar carro", "¿Desea quitar todas las prendas del carro?"):
-            self.venta.vaciar()
+            self.ctrl.vaciar(self.venta)
             self.refrescar()
-
-    def _crear_medio_pago(self):
-        """Crea el objeto del medio de pago elegido en pantalla."""
-        dato = self.txt_dato_pago.get()
-        nombre = self.medio_pago.get()
-        if nombre == "Efectivo":
-            return Efectivo(texto_a_entero(dato, "El monto recibido"))
-        if nombre == "Transferencia":
-            return Transferencia(dato)
-        return TarjetaDebito(dato)
 
     def cobrar(self):
         try:
-            self.tienda.registrar_venta(self.venta, self._crear_medio_pago())
+            medio_pago = self.ctrl.crear_medio_pago(self.medio_pago.get(), self.txt_dato_pago.get())
+            self.ctrl.registrar_venta(self.venta, medio_pago)
         except SinStockException as error:
             messagebox.showwarning("Sin stock", str(error))
             self.refrescar()
@@ -214,6 +204,6 @@ class PestanaVentas(tk.Frame):
             return
 
         mostrar_boleta(self, self.venta)
-        self.venta = Venta(self.empleado.nombre)
+        self.venta = self.ctrl.nueva_venta(self.empleado)
         self.txt_dato_pago.delete(0, tk.END)
         self.refrescar()

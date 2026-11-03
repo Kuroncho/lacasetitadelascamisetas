@@ -5,20 +5,20 @@ Ventana principal: muestra el inicio de sesión y luego las pestañas según el 
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from gui import colores
-from gui.componentes import FUENTE, FUENTE_BOTON, FUENTE_ENCABEZADO, crear_boton
-from gui.login import PantallaLogin
-from gui.pestana_clientes import PestanaClientes
-from gui.pestana_historial import PestanaHistorial
-from gui.pestana_inventario import PestanaInventario
-from gui.pestana_usuarios import PestanaUsuarios
-from gui.pestana_ventas import PestanaVentas
+from views import colores
+from views.componentes import FUENTE, FUENTE_BOTON, FUENTE_ENCABEZADO, crear_boton
+from views.login import PantallaLogin
+from views.pestana_clientes import PestanaClientes
+from views.pestana_historial import PestanaHistorial
+from views.pestana_inventario import PestanaInventario
+from views.pestana_usuarios import PestanaUsuarios
+from views.pestana_ventas import PestanaVentas
 
 
 class Aplicacion(tk.Tk):
-    def __init__(self, tienda):
+    def __init__(self, controladores):
         super().__init__()
-        self.tienda = tienda
+        self.controladores = controladores
         self.title("La Caserita de las Camisetas")
         self.geometry("1100x760")
         self.minsize(1000, 720)
@@ -28,7 +28,7 @@ class Aplicacion(tk.Tk):
 
         self.contenido = None
         self.mostrar_login()
-        for aviso in self.tienda.avisos:
+        for aviso in self.controladores.avisos:
             messagebox.showwarning("Aviso", aviso)
 
     def _configurar_estilos(self):
@@ -126,7 +126,7 @@ class Aplicacion(tk.Tk):
         self.contenido.pack(fill="both", expand=True)
 
     def mostrar_login(self):
-        self._cambiar_contenido(PantallaLogin(self, self.tienda, self.mostrar_principal))
+        self._cambiar_contenido(PantallaLogin(self, self.controladores, self.mostrar_principal))
 
     def mostrar_principal(self, empleado):
         marco = tk.Frame(self, bg=colores.BG_VENTANA)
@@ -152,12 +152,12 @@ class Aplicacion(tk.Tk):
 
         pestanas = ttk.Notebook(marco)
         pestanas.pack(fill="both", expand=True)
-        pestanas.add(PestanaVentas(pestanas, self.tienda, empleado), text="Ventas")
-        pestanas.add(PestanaClientes(pestanas, self.tienda), text="Clientes")
-        pestanas.add(PestanaHistorial(pestanas, self.tienda), text="Historial")
+        pestanas.add(PestanaVentas(pestanas, self.controladores, empleado), text="Ventas")
+        pestanas.add(PestanaClientes(pestanas, self.controladores), text="Clientes")
+        pestanas.add(PestanaHistorial(pestanas, self.controladores), text="Historial")
         if empleado.puede_administrar():
-            pestanas.add(PestanaInventario(pestanas, self.tienda), text="Inventario")
-            pestanas.add(PestanaUsuarios(pestanas, self.tienda, empleado), text="Usuarios")
+            pestanas.add(PestanaInventario(pestanas, self.controladores), text="Inventario")
+            pestanas.add(PestanaUsuarios(pestanas, self.controladores, empleado), text="Usuarios")
 
         # Al cambiar de pestaña se actualizan sus datos
         pestanas.bind(

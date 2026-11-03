@@ -189,6 +189,14 @@ class RopaInterior(Prenda):
         return datos
 
 
+# Cada tipo de prenda con su clase, para crear la correcta a partir del nombre del tipo
+CLASES_PRENDA = {
+    PrendaTermica.TIPO: PrendaTermica,
+    PrendaEstandar.TIPO: PrendaEstandar,
+    RopaInterior.TIPO: RopaInterior,
+}
+
+
 def prenda_desde_dict(datos: dict) -> Prenda:
     """Crea el objeto de la clase correcta a partir de lo guardado en JSON."""
     base = (datos["codigo"], datos["nombre"], datos["talla"], datos["precio_base"], datos["stock"])
