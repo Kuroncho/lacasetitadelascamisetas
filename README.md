@@ -27,7 +27,9 @@ En Mac o Linux, usa `python3` en lugar de `py`.
 
 Los datos se guardan en `datos/`: `prendas.json`, `clientes.json`, `usuarios.json` y `ventas.json`.
 
-- Si la carpeta no existe, se crea con datos de ejemplo. Para partir de cero, basta con borrarla.
+- La carpeta `datos/` **viaja con el repositorio**: lo que se cree o se elimine en la app queda en estos archivos. Para compartirlo con el equipo hay que hacer commit y push de los cambios en `datos/`, y los demás deben hacer Pull.
+- Si un archivo falta, se crea con datos de ejemplo. Para volver a los datos de ejemplo, basta con borrar el archivo (o la carpeta) con la app cerrada.
+- Para evitar conflictos, que una sola persona use la app y suba `datos/` a la vez; antes de usarla, hacer Pull.
 - Si un archivo está dañado, se renombra como `.corrupto`, se crea uno nuevo y la aplicación avisa.
 
 ## Estructura (MVC)

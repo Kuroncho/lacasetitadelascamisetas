@@ -1,0 +1,16 @@
+[
+  {
+    "rol": "Administrador",
+    "rut": "33333333-3",
+    "nombre": "Marisol Mena",
+    "usuario": "marisol",
+    "clave_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9"
+  },
+  {
+    "rol": "Vendedor",
+    "rut": "44444444-4",
+    "nombre": "Carlos Baeza",
+    "usuario": "carlos",
+    "clave_hash": "1ad6411c0c7d03159718fe5db7230462688551a309af849b5e03edfc6650b030"
+  }
+]

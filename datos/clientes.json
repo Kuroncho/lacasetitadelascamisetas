@@ -1,0 +1,14 @@
+[
+  {
+    "rut": "11111111-1",
+    "nombre": "Juan Perez",
+    "telefono": "+56911223344",
+    "correo": "juan@correo.cl"
+  },
+  {
+    "rut": "22222222-2",
+    "nombre": "Maria Gonzalez",
+    "telefono": "+56988776655",
+    "correo": "maria@correo.cl"
+  }
+]

@@ -1,0 +1,60 @@
+[
+  {
+    "tipo": "Térmica",
+    "codigo": "TER-001",
+    "nombre": "Beatle",
+    "talla": "M",
+    "precio_base": 12000,
+    "stock": 10,
+    "tipo_cuello": "Tortuga",
+    "nivel_termico": "Alto"
+  },
+  {
+    "tipo": "Térmica",
+    "codigo": "TER-002",
+    "nombre": "Camiseta de invierno",
+    "talla": "L",
+    "precio_base": 10000,
+    "stock": 8,
+    "tipo_cuello": "Redondo",
+    "nivel_termico": "Medio"
+  },
+  {
+    "tipo": "Estándar",
+    "codigo": "EST-001",
+    "nombre": "Polera básica",
+    "talla": "S",
+    "precio_base": 5000,
+    "stock": 20,
+    "tipo_manga": "Corta"
+  },
+  {
+    "tipo": "Estándar",
+    "codigo": "EST-002",
+    "nombre": "Polera básica",
+    "talla": "L",
+    "precio_base": 6000,
+    "stock": 15,
+    "tipo_manga": "Larga"
+  },
+  {
+    "tipo": "Ropa Interior",
+    "codigo": "INT-001",
+    "nombre": "Calzoncillo largo",
+    "talla": "M",
+    "precio_base": 8000,
+    "stock": 12,
+    "tipo_elastico": "Ancho",
+    "ajuste": "Regular"
+  },
+  {
+    "tipo": "Ropa Interior",
+    "codigo": "INT-002",
+    "nombre": "Calzoncillo largo",
+    "talla": "XXL",
+    "precio_base": 8000,
+    "stock": 2,
+    "tipo_elastico": "Ancho",
+    "ajuste": "Ceñido"
+  }
+]
