@@ -3,6 +3,8 @@
 Sistema de ventas, inventario y usuarios para la tienda de Marisol Mena.
 Trabajo de Programación Orientada a Objetos, Analista Programador, Duoc UC.
 
+Si no conoces la sintaxis de Python usada aquí (clases, `try/except`, `@property`, etc.), lee `GUIA_DE_SINTAXIS.md`: explica cada concepto con ejemplos de este proyecto. Además, cada archivo `.py` tiene comentarios que explican qué hace cada parte.
+
 ## Cómo ejecutar
 
 Requiere Python 3.10 o superior con Tkinter. No hay que instalar nada más, porque solo usa la librería estándar.

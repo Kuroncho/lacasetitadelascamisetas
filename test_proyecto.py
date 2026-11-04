@@ -3,7 +3,11 @@ Pruebas automáticas de las reglas del negocio y de los casos borde.
 Para ejecutar: py -m unittest -v
 """
 
+# Una prueba automática es una función que ejecuta una parte del programa y revisa que el resultado sea el esperado.
+# Si algo no coincide, avisa. unittest es la herramienta de Python para eso. Cada método que empieza con 'test_'
+# es una prueba; la clase que las agrupa hereda de unittest.TestCase.
 import json
+# tempfile crea carpetas temporales: las pruebas nunca tocan los datos reales de la carpeta 'datos'.
 import tempfile
 import unittest
 from pathlib import Path
@@ -20,10 +24,13 @@ from models.venta import EstadoVenta, Venta
 from views.texto_boleta import generar_boleta
 
 
+# Clase base: prepara lo que necesitan muchas pruebas. Las demás clases la heredan.
 class BaseTienda(unittest.TestCase):
     """Cada prueba parte con datos nuevos en una carpeta temporal."""
 
+    # setUp se ejecuta automáticamente ANTES de cada prueba, así cada una parte desde cero con datos nuevos.
     def setUp(self):
+        # Carpeta temporal para esta prueba; addCleanup la borra al terminar.
         carpeta = tempfile.TemporaryDirectory()
         self.addCleanup(carpeta.cleanup)
         self.carpeta = Path(carpeta.name)
@@ -31,24 +38,29 @@ class BaseTienda(unittest.TestCase):
         self.ctrl = Controladores(self.almacen)
         self.cliente = self.almacen.clientes[0]
 
+    # Ayudante: arma una venta con un cliente y una prenda, para no repetir esas líneas en cada prueba.
     def nueva_venta(self, codigo="EST-001", cantidad=1):
         venta = self.ctrl.ventas.nueva_venta(self.almacen.buscar_usuario("carlos"))
         self.ctrl.ventas.asignar_cliente(venta, self.cliente.rut)
         self.ctrl.ventas.agregar_prenda(venta, codigo, str(cantidad))
         return venta
 
+    # Simula cerrar y volver a abrir el programa: crea un almacén nuevo leyendo los JSON. Sirve para probar que los datos se guardaron.
     def reabrir(self):
         """Simula cerrar y abrir la aplicación: retorna el almacén y los controladores nuevos."""
         almacen = Almacen(GestorDatos(self.carpeta))
         return almacen, Controladores(almacen)
 
 
+# Pruebas de las funciones que validan RUT, nombre, teléfono, correo y números.
 class TestValidaciones(unittest.TestCase):
     def test_rut_valido_se_normaliza(self):
+        # assertEqual(a, b) comprueba que a sea igual a b. Si no lo es, la prueba falla y muestra la diferencia.
         self.assertEqual(validar_rut("11.111.111-1"), "11111111-1")
 
     def test_rut_invalido_se_rechaza(self):
         for rut in ["abc", "", "11.111.111-2", "123"]:
+            # assertRaises comprueba que el código de adentro lance ese error. Si NO lo lanza, la prueba falla (el dato malo se habría aceptado).
             with self.assertRaises(ValueError):
                 validar_rut(rut)
 
@@ -74,6 +86,7 @@ class TestValidaciones(unittest.TestCase):
         self.assertEqual(formato_clp(1234567), "$1.234.567")
 
 
+# Pruebas de los conceptos de POO: clases abstractas y precio distinto según el tipo de prenda (polimorfismo).
 class TestPOO(unittest.TestCase):
     def test_clases_abstractas_no_se_instancian(self):
         with self.assertRaises(TypeError):
@@ -99,6 +112,7 @@ class TestPOO(unittest.TestCase):
             PrendaEstandar("", "Polera", "M", 1000, 1, "Corta")
 
 
+# Pruebas del caso borde principal: no se puede vender más de lo que hay en stock.
 class TestStock(BaseTienda):
     def test_no_se_agrega_mas_que_el_stock(self):
         venta = Venta("Carlos")
@@ -148,6 +162,7 @@ class TestStock(BaseTienda):
             self.ctrl.ventas.registrar_venta(venta, Efectivo(100000))
 
 
+# Pruebas del flujo de venta: cobro, medios de pago, folios, IVA, cancelaciones y descuento de cliente frecuente.
 class TestVentas(BaseTienda):
     def test_venta_exitosa_descuenta_stock_y_asigna_folio(self):
         venta = self.nueva_venta("EST-001", 2)  # 2 x 5.000
@@ -270,6 +285,7 @@ class TestVentas(BaseTienda):
         self.assertEqual(venta.calcular_total(), 9500)
 
 
+# Pruebas de usuarios, clientes e inventario: inicio de sesión, duplicados y datos inválidos.
 class TestGestion(BaseTienda):
     def test_login(self):
         usuarios = self.ctrl.usuarios
@@ -353,6 +369,7 @@ class TestGestion(BaseTienda):
             self.ctrl.inventario.crear_prenda("Estándar", "est-001", "Polera", "M", "1000", "1", "Corta")
 
 
+# Pruebas del JSON: lo guardado sobrevive al reinicio y los archivos dañados no rompen el programa.
 class TestPersistencia(BaseTienda):
     def test_todo_sobrevive_al_reinicio(self):
         self.ctrl.clientes.registrar("55.555.555-5", "Ana Soto", "912345678", "ana@correo.cl")
@@ -407,6 +424,7 @@ class TestPersistencia(BaseTienda):
         self.assertIsNotNone(self.reabrir()[1].usuarios.iniciar_sesion("marisol", "admin123"))
 
 
+# Revisa que cada capa respete sus límites: el modelo no conoce controladores ni pantallas, y los controladores no conocen la pantalla.
 class TestSeparacionMVC(unittest.TestCase):
     """La capa de modelo no debe conocer a controladores ni vistas, y los controladores no deben conocer la pantalla."""
 
@@ -423,5 +441,6 @@ class TestSeparacionMVC(unittest.TestCase):
         self.revisar("controllers", ["import views", "from views", "tkinter", "messagebox"])
 
 
+# Permite ejecutar las pruebas con 'py test_proyecto.py' además de 'py -m unittest'.
 if __name__ == "__main__":
     unittest.main()

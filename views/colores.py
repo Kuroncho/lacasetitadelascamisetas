@@ -5,6 +5,9 @@ Cliente: Requerimiento de colores suaves y armoniosos en escala pastel.
 """
 
 # Fondos generales
+# Los colores se escriben en formato hexadecimal: '#' seguido de 6 caracteres (rojo, verde y azul). Se definen aquí una sola vez
+# y el resto del programa los usa por su nombre (colores.BG_VENTANA), así para cambiar un color basta editar esta línea.
+# BG = fondo (background), FG = color del texto (foreground), BTN = botón.
 BG_VENTANA = "#F4F7F6"       # Blanco humo / verde pastel sumamente suave
 BG_TARJETA = "#FFFFFF"       # Blanco para tarjetas y contenedores
 BG_HEADER = "#C8D9E6"        # Celeste pastel frío elegante
