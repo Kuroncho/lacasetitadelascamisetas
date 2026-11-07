@@ -16,6 +16,13 @@ py -m unittest -v       # ejecuta las pruebas
 
 En Mac o Linux, usa `python3` en lugar de `py`.
 
+### Si usas Mac
+
+El Python del sistema (3.9) es muy antiguo para este proyecto. Hay dos formas de tener un Python con Tkinter:
+
+- **Recomendada:** instala Python desde https://www.python.org/downloads/ (ya incluye Tkinter) y ejecuta `python3 main.py`.
+- **Con Homebrew:** el Python de Homebrew no trae Tkinter y al abrir aparece el error `No module named '_tkinter'`. Averigua tu versión con `python3 --version` e instala el paquete de la misma versión. Por ejemplo, para Python 3.14: `brew install python-tk@3.14`.
+
 ## Usuarios de prueba
 
 | Usuario | Clave | Rol | Puede usar |
