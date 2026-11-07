@@ -9,3 +9,6 @@ datos/*.corrupto
 .env
 .env.*
 !.env.example
+
+# Material del video de entrega: solo queda en local, no se sube a GitHub.
+video/
