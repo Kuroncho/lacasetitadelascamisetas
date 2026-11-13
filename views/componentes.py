@@ -5,12 +5,15 @@ Piezas de interfaz que se repiten en todas las pestañas.
 # Tkinter es la herramienta de Python para crear ventanas. 'as tk' le da un nombre corto (tk.Frame en vez de tkinter.Frame).
 # Un "widget" es cualquier elemento visible: botón, texto, caja, tabla...
 import tkinter as tk
+# webbrowser abre una dirección web en el navegador del computador.
+import webbrowser
 # ttk son widgets más modernos (botones, tablas, pestañas) que se pueden personalizar con estilos.
-from tkinter import ttk
+# messagebox muestra ventanas de aviso.
+from tkinter import messagebox, ttk
 
 from views import colores
 # El texto de la boleta se arma en otro archivo; aquí solo se muestra en una ventana.
-from views.texto_boleta import generar_boleta
+from views.texto_boleta import generar_boleta, generar_url_whatsapp
 
 # Una fuente se describe con una tupla: (tipo de letra, tamaño, estilo). Son valores fijos que se reutilizan en toda la pantalla.
 FUENTE = ("Segoe UI", 11)
@@ -91,6 +94,20 @@ def fila_seleccionada(tabla):
     return seleccion[0] if seleccion else None
 
 
+# Abre WhatsApp con el resumen de la venta ya escrito. Si el navegador no se puede abrir, muestra un mensaje de error.
+def enviar_whatsapp(venta):
+    # Se asume que falló hasta que se compruebe lo contrario.
+    abierto = False
+    try:
+        # webbrowser.open devuelve True si pudo abrir la dirección y False si no pudo.
+        abierto = webbrowser.open(generar_url_whatsapp(venta))
+    # webbrowser.Error es el error propio de ese módulo.
+    except webbrowser.Error:
+        abierto = False
+    if not abierto:
+        messagebox.showerror("WhatsApp", "No se pudo abrir WhatsApp en el navegador.")
+
+
 # Abre una ventana nueva (Toplevel) con el texto de la boleta.
 def mostrar_boleta(padre, venta):
     """Abre una ventana con la boleta de la venta."""
@@ -109,5 +126,7 @@ def mostrar_boleta(padre, venta):
     # 'disabled' deja el texto en solo lectura: se puede leer pero no editar.
     texto.configure(state="disabled")
     texto.pack(padx=12, pady=12, fill="both", expand=True)
+    # lambda es una mini-función: así se pasa 'venta' a enviar_whatsapp, que se ejecuta recién al hacer clic.
+    crear_boton(ventana, "Enviar resumen por WhatsApp", lambda: enviar_whatsapp(venta), "VERDE").pack(pady=(0, 8))
     crear_boton(ventana, "Cerrar", ventana.destroy, "ROSA").pack(pady=(0, 12))
     ventana.transient(padre.winfo_toplevel())

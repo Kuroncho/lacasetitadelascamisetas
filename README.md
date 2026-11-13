@@ -74,7 +74,7 @@ views/
   login.py                       Inicio de sesión
   pestana_*.py                   Una clase por cada pestaña
   componentes.py                 Botones, tablas y ventana de boleta reutilizables
-  texto_boleta.py                Texto de la boleta
+  texto_boleta.py                Texto de la boleta y del resumen para WhatsApp
   colores.py                     Paleta pastel
 test_proyecto.py                 Pruebas automáticas
 ```
@@ -102,7 +102,12 @@ Ejemplo: al presionar "Cobrar y emitir boleta" la vista llama a `ControladorVent
 | Recargo de ropa interior XL y XXL | 10 % | `RopaInterior.RECARGO_TALLA` |
 | Cliente frecuente | 5 % desde 3 compras | `controllers/controlador_ventas.py` |
 | IVA | 19 % incluido en el precio: `total * 19 / 119` | `models/venta.py` |
+| Bloqueo de usuario (RNF-04) | 5 claves incorrectas seguidas bloquean la cuenta 10 minutos | `MAX_INTENTOS` y `MINUTOS_BLOQUEO` en `controllers/controlador_usuarios.py` |
 
 El caso de estudio pide estas reglas, pero no indica los porcentajes ni los umbrales: los valores de esta tabla son provisionales y falta confirmarlos.
+
+**Bloqueo por intentos fallidos:** si un usuario falla la clave 5 veces seguidas, su cuenta se bloquea 10 minutos. Mientras está bloqueada, el inicio de sesión se rechaza aunque la clave sea correcta, y el mensaje indica cuántos minutos faltan. Un inicio de sesión correcto reinicia el contador. El estado se guarda solo en memoria, por lo que al cerrar la aplicación se pierde.
+
+**Resumen por WhatsApp (HU09):** la ventana de la boleta tiene el botón "Enviar resumen por WhatsApp", que abre `https://wa.me/<número>?text=<mensaje>` en el navegador con el folio, las prendas, el total con IVA y el medio de pago. El número de la tienda es la constante `NUMERO_WHATSAPP_TIENDA` en `views/texto_boleta.py` y es **provisional**: hay que reemplazarlo por el número real.
 
 Estados de una venta: `PENDIENTE` → `PAGADA` → `ENTREGADA`, o de `PAGADA` a `CANCELADA`. Al cancelar, el stock vuelve al inventario. El stock se descuenta solo cuando la venta se paga, por lo que armar un carro no cambia el inventario.

@@ -13,6 +13,7 @@ import unittest
 from pathlib import Path
 
 from controllers import Controladores
+from controllers.controlador_usuarios import MAX_INTENTOS, MINUTOS_BLOQUEO
 from models.almacen import Almacen
 from models.excepciones import PagoRechazadoException, SinStockException
 from models.gestor_datos import GestorDatos
@@ -21,7 +22,12 @@ from models.prenda import Prenda, PrendaEstandar, PrendaTermica, RopaInterior
 from models.usuario import Cliente, Usuario, Vendedor
 from models.validaciones import formato_clp, texto_a_entero, validar_rut
 from models.venta import EstadoVenta, Venta
-from views.texto_boleta import generar_boleta
+from views.texto_boleta import (
+    NUMERO_WHATSAPP_TIENDA,
+    generar_boleta,
+    generar_resumen_whatsapp,
+    generar_url_whatsapp,
+)
 
 
 # Clase base: prepara lo que necesitan muchas pruebas. Las demás clases la heredan.
@@ -422,6 +428,109 @@ class TestPersistencia(BaseTienda):
         solo_vendedores = [d for d in datos if d["rol"] == "Vendedor"]
         (self.carpeta / "usuarios.json").write_text(json.dumps(solo_vendedores), encoding="utf-8")
         self.assertIsNotNone(self.reabrir()[1].usuarios.iniciar_sesion("marisol", "admin123"))
+
+
+# Reloj falso para las pruebas: entrega la hora que se le indique y se puede adelantar sin esperar de verdad.
+class RelojFalso:
+    def __init__(self):
+        self.segundos = 1000.0
+
+    # Al llamar al objeto como una función (reloj()) devuelve la hora falsa.
+    def __call__(self):
+        return self.segundos
+
+    def avanzar_minutos(self, minutos):
+        self.segundos += minutos * 60
+
+
+# Pruebas del bloqueo por intentos fallidos (RNF-04).
+class TestBloqueoLogin(BaseTienda):
+    def setUp(self):
+        super().setUp()
+        # Se reemplaza el reloj del controlador por el falso para simular el paso del tiempo.
+        self.reloj = RelojFalso()
+        self.ctrl.usuarios._reloj = self.reloj
+
+    # Ayudante: falla el inicio de sesión la cantidad de veces indicada.
+    def fallar(self, usuario, veces):
+        for _ in range(veces):
+            with self.assertRaises(ValueError):
+                self.ctrl.usuarios.iniciar_sesion(usuario, "clave_mala")
+
+    def test_cuatro_fallos_no_bloquean(self):
+        self.fallar("carlos", MAX_INTENTOS - 1)
+        self.assertEqual(self.ctrl.usuarios.iniciar_sesion("carlos", "vende123").usuario, "carlos")
+
+    def test_bloqueo_tras_cinco_fallos_aunque_la_clave_sea_correcta(self):
+        self.fallar("carlos", MAX_INTENTOS)
+        with self.assertRaises(ValueError) as contexto:
+            self.ctrl.usuarios.iniciar_sesion("carlos", "vende123")
+        # El mensaje indica cuántos minutos faltan.
+        self.assertIn(f"{MINUTOS_BLOQUEO} minuto", str(contexto.exception))
+
+    def test_mensaje_muestra_minutos_restantes(self):
+        self.fallar("carlos", MAX_INTENTOS)
+        self.reloj.avanzar_minutos(4)
+        with self.assertRaises(ValueError) as contexto:
+            self.ctrl.usuarios.iniciar_sesion("carlos", "vende123")
+        self.assertIn("6 minuto", str(contexto.exception))
+
+    def test_se_desbloquea_despues_de_diez_minutos(self):
+        self.fallar("carlos", MAX_INTENTOS)
+        self.reloj.avanzar_minutos(MINUTOS_BLOQUEO - 1)
+        with self.assertRaises(ValueError):
+            self.ctrl.usuarios.iniciar_sesion("carlos", "vende123")
+        self.reloj.avanzar_minutos(1)
+        self.assertEqual(self.ctrl.usuarios.iniciar_sesion("carlos", "vende123").usuario, "carlos")
+
+    def test_login_exitoso_reinicia_el_contador(self):
+        self.fallar("carlos", MAX_INTENTOS - 1)
+        self.ctrl.usuarios.iniciar_sesion("carlos", "vende123")
+        # Si el contador no se hubiera reiniciado, este fallo bloquearía la cuenta.
+        self.fallar("carlos", MAX_INTENTOS - 1)
+        self.assertEqual(self.ctrl.usuarios.iniciar_sesion("carlos", "vende123").usuario, "carlos")
+
+    def test_el_bloqueo_es_por_usuario(self):
+        self.fallar("carlos", MAX_INTENTOS)
+        self.assertEqual(self.ctrl.usuarios.iniciar_sesion("marisol", "admin123").usuario, "marisol")
+
+    def test_usuario_inexistente_se_comporta_igual(self):
+        # No debe revelar si el usuario existe: también se bloquea y el mensaje es el mismo.
+        self.fallar("nadie", MAX_INTENTOS)
+        with self.assertRaises(ValueError) as contexto:
+            self.ctrl.usuarios.iniciar_sesion("nadie", "lo_que_sea")
+        self.assertIn(f"{MINUTOS_BLOQUEO} minuto", str(contexto.exception))
+
+
+# Pruebas del resumen de venta para WhatsApp (solo el texto y la dirección; no se abre ningún navegador).
+class TestResumenWhatsapp(BaseTienda):
+    def pagar(self):
+        venta = self.nueva_venta("EST-001", 2)
+        self.ctrl.ventas.registrar_venta(venta, Efectivo(100000))
+        return venta
+
+    def test_texto_incluye_folio_prendas_total_y_pago(self):
+        venta = self.pagar()
+        texto = generar_resumen_whatsapp(venta)
+        self.assertIn(str(venta.folio), texto)
+        detalle = venta.detalles[0]
+        self.assertIn(detalle.descripcion, texto)
+        self.assertIn(f"x{detalle.cantidad}", texto)
+        self.assertIn(formato_clp(detalle.subtotal), texto)
+        self.assertIn(formato_clp(venta.calcular_total()), texto)
+        self.assertIn("Efectivo", texto)
+
+    def test_url_usa_el_numero_y_esta_codificada(self):
+        venta = self.pagar()
+        url = generar_url_whatsapp(venta)
+        self.assertTrue(url.startswith(f"https://wa.me/{NUMERO_WHATSAPP_TIENDA}?text="))
+        mensaje = url.split("?text=", 1)[1]
+        # Espacios, saltos de línea y el signo $ no pueden ir sin codificar.
+        for caracter in " \n$":
+            self.assertNotIn(caracter, mensaje)
+        self.assertIn("%0A", mensaje)
+        self.assertIn(str(venta.folio), mensaje)
+        self.assertIn("%24", mensaje)
 
 
 # Revisa que cada capa respete sus límites: el modelo no conoce controladores ni pantallas, y los controladores no conocen la pantalla.
