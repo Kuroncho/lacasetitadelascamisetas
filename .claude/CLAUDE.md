@@ -22,7 +22,8 @@ DuocUC group coursework (second semester, Analista Programador): sales, inventor
 **At session end:** UPDATE `progress-current.md` + `MASTER_CONTEXT.md`
 
 ## Stack
-- Python 3.10 or newer, standard library only (tkinter, json, abc, hashlib, unittest)
+- Python 3.10 or newer, standard library (tkinter, abc, hashlib, unittest) plus one approved dependency: mysql-connector-python (approved 2026-11-17 for the Parcial 3 MySQL migration, HU14 / SCRUM-24)
+- Database: MySQL (Homebrew on the Mac) and MariaDB 10.4 (XAMPP on teammates' Windows machines); SQL must run on both
 - Test runner: unittest
 - Homebrew `python3` on the Mac has no Tkinter: run the GUI with `/opt/homebrew/opt/python@3.13/bin/python3.13`
 
@@ -37,7 +38,7 @@ python3 -m unittest -v         # run the tests
 - Keep the code simple enough for second-semester students to explain: no extra frameworks or clever patterns
 
 ## What NOT to do
-- Do not add dependencies outside the standard library
+- Do not add dependencies beyond the standard library and mysql-connector-python
 - Do not copy from LaSoaMarisol until the user confirms whose project it is
 
 ---
