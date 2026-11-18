@@ -18,3 +18,9 @@ class SinStockException(ValueError):
 # (monto insuficiente, comprobante inválido, etc.).
 class PagoRechazadoException(ValueError):
     """Se lanza cuando un medio de pago no puede completar la transacción."""
+
+
+# Error al conectarse o al guardar en la base de datos MySQL. Envuelve los errores del conector,
+# así el resto del programa no necesita conocer la librería del conector de MySQL.
+class ErrorBaseDatos(Exception):
+    """Se lanza cuando MySQL no responde o rechaza una operación."""

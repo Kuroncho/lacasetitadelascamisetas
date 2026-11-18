@@ -1,0 +1,2 @@
+# Única dependencia externa: el conector oficial de MySQL (funciona también con MariaDB de XAMPP).
+mysql-connector-python==26.10.0

@@ -12,3 +12,7 @@ datos/*.corrupto
 
 # Material del video de entrega: solo queda en local, no se sube a GitHub.
 video/
+
+# Entorno virtual de Python y configuración local de MySQL (puede tener una contraseña).
+.venv/
+config_bd.local.ini
