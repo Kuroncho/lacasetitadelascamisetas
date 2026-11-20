@@ -118,7 +118,7 @@ class PestanaVentas(tk.Frame):
         self.lbl_iva = crear_etiqueta(tarjeta, "")
         self.lbl_iva.pack(anchor="e")
 
-        destacado = tk.Frame(tarjeta, bg=colores.BG_TOTAL_DESTACADO, padx=8, pady=4)
+        destacado = tk.Frame(tarjeta, bg=colores.BG_TOTAL_DESTACADO, padx=12, pady=8, relief="groove", bd=1)
         destacado.pack(fill="x", pady=6)
         self.lbl_total = tk.Label(
             destacado, font=FUENTE_TITULO, anchor="e",

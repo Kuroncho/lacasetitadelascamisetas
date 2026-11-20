@@ -1,16 +1,20 @@
 """
-Ventana principal: muestra el inicio de sesión y luego las pestañas según el rol.
+Ventana principal: gestiona el ciclo de vida de la aplicación,
+el inicio de sesión y la navegación por pestañas con estilo pastel armonioso.
 """
 
-# Tkinter es la herramienta de Python para crear ventanas ('as tk' es un nombre corto). Un "widget" es cualquier elemento visible:
-# botón, texto, caja, tabla... Las vistas solo dibujan y llaman a los controladores; no deciden reglas del negocio.
 import tkinter as tk
-# messagebox: ventanas de aviso (error, pregunta, información). ttk: widgets modernos que se pueden estilizar.
 from tkinter import messagebox, ttk
 
-# colores.py guarda la paleta pastel; aquí se usa por nombre (colores.BG_VENTANA).
 from views import colores
-from views.componentes import FUENTE, FUENTE_BOTON, FUENTE_ENCABEZADO, crear_boton
+from views.componentes import (
+    FUENTE,
+    FUENTE_BOTON,
+    FUENTE_ENCABEZADO,
+    FUENTE_SUBTITULO,
+    crear_boton,
+)
+from views.imagenes import aplicar_icono_ventana, cargar_logo
 from views.login import PantallaLogin
 from views.pestana_clientes import PestanaClientes
 from views.pestana_historial import PestanaHistorial
@@ -19,35 +23,40 @@ from views.pestana_usuarios import PestanaUsuarios
 from views.pestana_ventas import PestanaVentas
 
 
-# La ventana principal. Hereda de tk.Tk (la ventana base de Tkinter), así que ya sabe abrirse, cambiar de tamaño, etc.
 class Aplicacion(tk.Tk):
-    # Recibe los controladores: es la única conexión de la pantalla con las reglas del negocio.
+    """Ventana raíz de la aplicación con configuración visual global."""
+
     def __init__(self, controladores):
-        # Inicializa la ventana base de Tkinter (la clase padre).
         super().__init__()
         self.controladores = controladores
-        # Título de la ventana, tamaño inicial (ancho x alto) y tamaño mínimo.
-        self.title("La Caserita de las Camisetas")
-        self.geometry("1100x760")
-        self.minsize(1000, 720)
+        self.title("La Caserita de las Camisetas - Confecciones con Amor")
+        self.geometry("1120x760")
+        self.minsize(1020, 720)
         self.configure(bg=colores.BG_VENTANA)
 
-        # Define colores y fuentes de todos los widgets (más abajo).
+        # Forzar a que la ventana se eleve al frente y tome el foco en Windows
+        self.deiconify()
+        self.lift()
+        self.focus_force()
+        self.after(150, lambda: (self.lift(), self.focus_force()))
+
+        # Asigna el logo oficial al ícono de la ventana y de la barra de tareas
+        aplicar_icono_ventana(self)
+
+        # Referencia para mantener el logo del encabezado en memoria
+        self.logo_header_img = None
+
+        # Configuración estética global
         self._configurar_estilos()
 
-        # None significa 'nada todavía'. Aquí se guarda lo que se está mostrando (el login o la pantalla principal).
         self.contenido = None
-        # Al abrir el programa lo primero es el inicio de sesión.
         self.mostrar_login()
-        # Si al abrir había un archivo de datos dañado, se avisa con una ventana.
-        for aviso in self.controladores.avisos:
-            messagebox.showwarning("Aviso", aviso)
 
-    # Esta función solo define colores y fuentes de los widgets; no tiene lógica del negocio, se puede leer por encima.
-    # Se aplican de forma global para que se vean igual en cualquier computador.
+        for aviso in self.controladores.avisos:
+            messagebox.showwarning("Aviso de Base de Datos / Sistema", aviso)
+
     def _configurar_estilos(self):
-        """Fija los colores pastel, para que se vean igual en cualquier computador y en modo oscuro."""
-        # Recorre una lista de pares (opción, valor). option_add aplica cada opción a todos los widgets de ese tipo.
+        """Define la paleta pastel y tipografía para todos los widgets del sistema."""
         for opcion, valor in [
             ("*Entry.background", colores.BG_TARJETA),
             ("*Entry.foreground", colores.TEXTO_TITULO),
@@ -70,41 +79,70 @@ class Aplicacion(tk.Tk):
         ]:
             self.option_add(opcion, valor)
 
-        # Los widgets 'ttk' se personalizan con estilos. Se parte del tema 'clam', que permite cambiar colores.
         estilo = ttk.Style(self)
         estilo.theme_use("clam")
 
-        # Un estilo de botón por cada color pastel
-        # Se crea un estilo de botón por cada color pastel (verde, azul, rosa, durazno y lavanda).
+        # Configuración de botones en los tonos pastel
         for nombre in ("VERDE", "AZUL", "ROSA", "DURAZNO", "LAVANDA"):
-            # getattr(colores, 'BTN_VERDE_BG') obtiene la variable de colores.py cuyo nombre se arma con texto.
             fondo = getattr(colores, f"BTN_{nombre}_BG")
             estilo.configure(
-                f"{nombre}.TButton", font=FUENTE_BOTON, padding=(12, 6), relief="flat", borderwidth=0,
-                background=fondo, foreground=getattr(colores, f"BTN_{nombre}_FG"),
-                bordercolor=fondo, lightcolor=fondo, darkcolor=fondo, focuscolor=fondo,
+                f"{nombre}.TButton",
+                font=FUENTE_BOTON,
+                padding=(14, 7),
+                relief="flat",
+                borderwidth=0,
+                background=fondo,
+                foreground=getattr(colores, f"BTN_{nombre}_FG"),
+                bordercolor=fondo,
+                lightcolor=fondo,
+                darkcolor=fondo,
+                focuscolor=fondo,
             )
-            estilo.map(f"{nombre}.TButton", background=[("active", getattr(colores, f"BTN_{nombre}_HOVER"))])
+            estilo.map(
+                f"{nombre}.TButton",
+                background=[("active", getattr(colores, f"BTN_{nombre}_HOVER"))],
+            )
 
+        # Tablas (Treeview) con filas más espaciosas y colores alternados
         estilo.configure(
-            "Treeview", rowheight=26, font=FUENTE, borderwidth=0, background=colores.BG_TARJETA,
-            fieldbackground=colores.BG_TARJETA, foreground=colores.TEXTO_CUERPO,
+            "Treeview",
+            rowheight=28,
+            font=FUENTE,
+            borderwidth=0,
+            background=colores.BG_TARJETA,
+            fieldbackground=colores.BG_TARJETA,
+            foreground=colores.TEXTO_CUERPO,
         )
         estilo.map(
             "Treeview",
-            background=[("selected", colores.BG_TOTAL_DESTACADO)],
+            background=[("selected", colores.BTN_AZUL_BG)],
             foreground=[("selected", colores.TEXTO_TITULO)],
         )
         estilo.configure(
-            "Treeview.Heading", font=FUENTE_BOTON, relief="flat", borderwidth=0,
-            background=colores.BG_HEADER, foreground=colores.FG_HEADER,
+            "Treeview.Heading",
+            font=FUENTE_BOTON,
+            relief="flat",
+            borderwidth=0,
+            padding=(8, 6),
+            background=colores.BG_HEADER,
+            foreground=colores.FG_HEADER,
         )
-        estilo.map("Treeview.Heading", background=[("active", colores.BG_TOTAL_DESTACADO)])
+        estilo.map(
+            "Treeview.Heading",
+            background=[("active", colores.BG_TOTAL_DESTACADO)],
+        )
 
+        # Listas desplegables (Combobox)
         estilo.configure(
-            "TCombobox", padding=4, arrowsize=14, foreground=colores.TEXTO_TITULO, arrowcolor=colores.FG_HEADER,
-            background=colores.BG_HEADER, bordercolor=colores.BORDE_SUAVE,
-            lightcolor=colores.BG_TARJETA, darkcolor=colores.BG_TARJETA,
+            "TCombobox",
+            padding=5,
+            arrowsize=14,
+            foreground=colores.TEXTO_TITULO,
+            arrowcolor=colores.FG_HEADER,
+            background=colores.BG_HEADER,
+            bordercolor=colores.BORDE_SUAVE,
+            lightcolor=colores.BG_TARJETA,
+            darkcolor=colores.BG_TARJETA,
         )
         estilo.map(
             "TCombobox",
@@ -115,85 +153,132 @@ class Aplicacion(tk.Tk):
             background=[("readonly", colores.BG_HEADER), ("disabled", colores.BG_VENTANA)],
         )
 
+        # Barras de desplazamiento
         estilo.configure(
-            "Vertical.TScrollbar", background=colores.BG_HEADER, troughcolor=colores.BG_VENTANA,
-            bordercolor=colores.BORDE_SUAVE, arrowcolor=colores.FG_HEADER,
-            lightcolor=colores.BG_HEADER, darkcolor=colores.BG_HEADER,
+            "Vertical.TScrollbar",
+            background=colores.BG_HEADER,
+            troughcolor=colores.BG_VENTANA,
+            bordercolor=colores.BORDE_SUAVE,
+            arrowcolor=colores.FG_HEADER,
+            lightcolor=colores.BG_HEADER,
+            darkcolor=colores.BG_HEADER,
         )
 
-        estilo.configure("TNotebook", background=colores.BG_VENTANA, borderwidth=0, tabmargins=(12, 8, 12, 0))
+        # Pestañas (Notebook)
         estilo.configure(
-            "TNotebook.Tab", font=FUENTE_BOTON, padding=(16, 6), borderwidth=0,
-            background=colores.BG_HEADER, foreground=colores.FG_HEADER,
-            bordercolor=colores.BG_VENTANA, lightcolor=colores.BG_HEADER,
+            "TNotebook",
+            background=colores.BG_VENTANA,
+            borderwidth=0,
+            tabmargins=(14, 10, 14, 0),
+        )
+        estilo.configure(
+            "TNotebook.Tab",
+            font=FUENTE_BOTON,
+            padding=(18, 7),
+            borderwidth=0,
+            background=colores.BG_HEADER,
+            foreground=colores.FG_HEADER,
+            bordercolor=colores.BG_VENTANA,
+            lightcolor=colores.BG_HEADER,
         )
         estilo.map(
             "TNotebook.Tab",
-            background=[("selected", colores.BG_TARJETA), ("active", colores.BG_TOTAL_DESTACADO)],
+            background=[
+                ("selected", colores.BG_TARJETA),
+                ("active", colores.BG_TOTAL_DESTACADO),
+            ],
+            foreground=[
+                ("selected", colores.TEXTO_TITULO),
+                ("active", colores.FG_HEADER),
+            ],
             lightcolor=[("selected", colores.BG_TARJETA)],
         )
 
-    # Tkinter llama a esta función si ocurre un error inesperado dentro de un botón. Así se muestra un mensaje en vez de que no pase nada.
     def report_callback_exception(self, tipo, error, traza):
-        """Evita que un error inesperado pase en silencio: siempre se muestra un mensaje."""
+        """Muestra ventana de error amigable en caso de excepción imprevista."""
         messagebox.showerror("Error inesperado", f"Ocurrió un problema: {error}")
 
-    # Reemplaza lo que hay en la ventana: elimina lo anterior (destroy) y muestra lo nuevo.
     def _cambiar_contenido(self, nuevo):
-        # 'is not None' = ya había algo mostrado.
+        """Reemplaza la vista activa."""
         if self.contenido is not None:
             self.contenido.destroy()
         self.contenido = nuevo
-        # pack() ubica el widget en su contenedor; fill='both' y expand=True lo estiran para ocupar todo el espacio.
         self.contenido.pack(fill="both", expand=True)
 
-    # Muestra el login. Cuando el ingreso resulta bien, PantallaLogin llama a self.mostrar_principal.
     def mostrar_login(self):
+        """Despliega la pantalla de inicio de sesión."""
         self._cambiar_contenido(PantallaLogin(self, self.controladores, self.mostrar_principal))
 
-    # Arma la pantalla principal después de iniciar sesión. 'marco' es la caja que contiene todo.
     def mostrar_principal(self, empleado):
+        """Construye la vista principal con cabecera corporativa y pestañas operativas."""
         marco = tk.Frame(self, bg=colores.BG_VENTANA)
 
-        # Frame = caja contenedora. Esta es la franja celeste de arriba.
-        encabezado = tk.Frame(marco, bg=colores.BG_HEADER, padx=20, pady=10)
+        # Encabezado corporativo refinado
+        encabezado = tk.Frame(marco, bg=colores.BG_HEADER, padx=20, pady=12, relief="groove", bd=1)
         encabezado.pack(fill="x")
-        # Label = texto sin interacción. side='left' lo pega a la izquierda; padx es el margen horizontal.
-        tk.Label(encabezado, text="🧵", font=("Segoe UI", 26), bg=colores.BG_HEADER).pack(side="left", padx=(0, 10))
+
+        # Logo oficial redimensionado para el encabezado
+        self.logo_header_img = cargar_logo(48, 48)
+        if self.logo_header_img:
+            tk.Label(encabezado, image=self.logo_header_img, bg=colores.BG_HEADER).pack(
+                side="left", padx=(0, 14)
+            )
+        else:
+            tk.Label(encabezado, text="🧵", font=("Segoe UI", 24), bg=colores.BG_HEADER).pack(
+                side="left", padx=(0, 10)
+            )
+
         titulos = tk.Frame(encabezado, bg=colores.BG_HEADER)
         titulos.pack(side="left")
-        tk.Label(
-            titulos, text="LA CASERITA DE LAS CAMISETAS", font=FUENTE_ENCABEZADO,
-            bg=colores.BG_HEADER, fg=colores.FG_HEADER,
-        ).pack(anchor="w")
-        tk.Label(
-            titulos, text="Sistema de Ventas e Inventario | Analista Programador - Duoc UC", font=("Segoe UI", 9),
-            bg=colores.BG_HEADER, fg=colores.TEXTO_CUERPO,
-        ).pack(anchor="w")
-        # Al hacer clic vuelve al login. Se pasa self.mostrar_login sin paréntesis: se ejecuta cuando hacen clic, no ahora.
-        crear_boton(encabezado, "Cerrar sesión", self.mostrar_login, "DURAZNO").pack(side="right")
-        tk.Label(
-            encabezado, text=f"{empleado.nombre} ({empleado.obtener_rol()})", font=FUENTE_BOTON,
-            bg=colores.BG_TOTAL_DESTACADO, fg=colores.FG_TOTAL_DESTACADO, padx=12, pady=6,
-        ).pack(side="right", padx=12)
 
-        # Notebook es el widget de pestañas.
+        tk.Label(
+            titulos,
+            text="LA CASERITA DE LAS CAMISETAS",
+            font=FUENTE_ENCABEZADO,
+            bg=colores.BG_HEADER,
+            fg=colores.FG_HEADER,
+        ).pack(anchor="w")
+
+        tk.Label(
+            titulos,
+            text="Boutique & Confecciones · Made with Love · Analista Programador",
+            font=FUENTE_SUBTITULO,
+            bg=colores.BG_HEADER,
+            fg=colores.TEXTO_MUTED,
+        ).pack(anchor="w")
+
+        # Botón para cerrar sesión
+        crear_boton(encabezado, "Cerrar sesión", self.mostrar_login, "DURAZNO").pack(side="right")
+
+        # Badge con información del empleado activo
+        tk.Label(
+            encabezado,
+            text=f"👤  {empleado.nombre}  ({empleado.obtener_rol()})",
+            font=FUENTE_BOTON,
+            bg=colores.BG_BADGE,
+            fg=colores.FG_BADGE,
+            padx=14,
+            pady=6,
+            relief="groove",
+            bd=1,
+        ).pack(side="right", padx=14)
+
+        # Pestañas de navegación
         pestanas = ttk.Notebook(marco)
         pestanas.pack(fill="both", expand=True)
-        # Cada pestaña es una clase en su propio archivo (pestana_*.py). Se crea y se agrega con su título.
+
         pestanas.add(PestanaVentas(pestanas, self.controladores, empleado), text="Ventas")
         pestanas.add(PestanaClientes(pestanas, self.controladores), text="Clientes")
         pestanas.add(PestanaHistorial(pestanas, self.controladores), text="Historial")
-        # Solo el administrador ve las pestañas Inventario y Usuarios.
+
         if empleado.puede_administrar():
             pestanas.add(PestanaInventario(pestanas, self.controladores), text="Inventario")
             pestanas.add(PestanaUsuarios(pestanas, self.controladores, empleado), text="Usuarios")
 
-        # Al cambiar de pestaña se actualizan sus datos
-        # bind asocia un evento (cambiar de pestaña) con una función. 'lambda evento: ...' es una mini-función de una línea:
-        # cuando se abre una pestaña, se llama a su método refrescar() para mostrar los datos actualizados.
+        # Actualiza la vista de cada pestaña al hacer clic en ella
         pestanas.bind(
             "<<NotebookTabChanged>>",
             lambda evento: pestanas.nametowidget(pestanas.select()).refrescar(),
         )
+
         self._cambiar_contenido(marco)

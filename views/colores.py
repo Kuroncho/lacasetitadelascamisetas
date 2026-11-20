@@ -1,50 +1,55 @@
 """
-Definición de Paleta de Colores Pasteles
+Definición de Paleta de Colores Pasteles Armoniosos
 Proyecto: La Caserita de las Camisetas
-Cliente: Requerimiento de colores suaves y armoniosos en escala pastel.
+Inspirada en el logo artesanal de la marca: tonos lino, salvia, serenidad, blush y durazno pastel.
 """
 
 # Fondos generales
-# Los colores se escriben en formato hexadecimal: '#' seguido de 6 caracteres (rojo, verde y azul). Se definen aquí una sola vez
-# y el resto del programa los usa por su nombre (colores.BG_VENTANA), así para cambiar un color basta editar esta línea.
+# Los colores se escriben en formato hexadecimal: '#' seguido de 6 caracteres (rojo, verde y azul).
+# Se definen aquí una sola vez y el resto del programa los usa por su nombre (colores.BG_VENTANA).
 # BG = fondo (background), FG = color del texto (foreground), BTN = botón.
-BG_VENTANA = "#F4F7F6"       # Blanco humo / verde pastel sumamente suave
-BG_TARJETA = "#FFFFFF"       # Blanco para tarjetas y contenedores
-BG_HEADER = "#C8D9E6"        # Celeste pastel frío elegante
-FG_HEADER = "#1E2A38"        # Texto oscuro para excelente contraste
-BORDE_SUAVE = "#DDE5ED"      # Gris pastel suave para bordes
 
-# Textos
-TEXTO_TITULO = "#1E293B"     # Azul pizarra oscuro
-TEXTO_CUERPO = "#334155"     # Gris carbón legible
-TEXTO_MUTED = "#64748B"      # Gris suave para etiquetas secundarias
+BG_VENTANA = "#F7F4EF"       # Lino / Arena pastel sumamente suave, cálido y acogedor
+BG_TARJETA = "#FFFFFF"       # Blanco puro para tarjetas y cajas de datos
+BG_FILA_IMPAR = "#FAF7F2"    # Tono crema pastel sutil para filas alternadas en tablas
+BG_HEADER = "#EBE3D7"        # Lino artesanal pastel cálido (armoniza con el logo)
+FG_HEADER = "#2E221E"        # Espresso oscuro profundo para máximo contraste y elegancia
+BORDE_SUAVE = "#E2D9CD"      # Borde arena pastel sutil
+BORDE_TARJETA = "#E5DCD0"    # Borde suave para contenedores
 
-# Botones con acento Pastel
-# Verde menta pastel (Acción positiva / Agregar / Confirmar)
-BTN_VERDE_BG = "#B7E4C7"
-BTN_VERDE_HOVER = "#A2D8B4"
-BTN_VERDE_FG = "#1B4332"
+# Textos elegantes
+TEXTO_TITULO = "#2A201D"     # Espresso profundo, cálido y refinado
+TEXTO_CUERPO = "#463B38"     # Café carbón muy legible para etiquetas y párrafos
+TEXTO_MUTED = "#7F716D"      # Gris cálido para notas secundarias y detalles
 
-# Azul serenity pastel (Pagar / Procesar)
-BTN_AZUL_BG = "#BEE1E6"
-BTN_AZUL_HOVER = "#A9D6E5"
-BTN_AZUL_FG = "#1A365D"
+# Botones con acento Pastel Armonioso
+# Verde Salvia Pastel (Acción positiva / Agregar / Confirmar / Registrar)
+BTN_VERDE_BG = "#C5E0D0"
+BTN_VERDE_HOVER = "#B2D6C0"
+BTN_VERDE_FG = "#1B4731"
 
-# Rosa / Coral pastel (Eliminar / Cancelar)
-BTN_ROSA_BG = "#FAD2E1"
-BTN_ROSA_HOVER = "#F7B8CC"
-BTN_ROSA_FG = "#661D2E"
+# Azul Serenity Pastel (Cobrar / Procesar / Guardar / Ver boleta)
+BTN_AZUL_BG = "#C6DAE8"
+BTN_AZUL_HOVER = "#B2CDE0"
+BTN_AZUL_FG = "#1A3B4D"
 
-# Durazno / Melocotón pastel (Limpiar / Reiniciar)
-BTN_DURAZNO_BG = "#FFE5D9"
-BTN_DURAZNO_HOVER = "#FFCAD4"
-BTN_DURAZNO_FG = "#5C3026"
+# Rosa Blush Pastel (Eliminar / Cancelar / Quitar)
+BTN_ROSA_BG = "#F4CCD3"
+BTN_ROSA_HOVER = "#EDB7C1"
+BTN_ROSA_FG = "#5C1D2A"
 
-# Lavanda pastel (Avanzar estado / Info)
-BTN_LAVANDA_BG = "#E2D4F0"
-BTN_LAVANDA_HOVER = "#D4BFEC"
-BTN_LAVANDA_FG = "#3E1F58"
+# Durazno Pastel / Terracota Suave (Limpiar / Vaciar carro / Cerrar sesión / Restar stock)
+BTN_DURAZNO_BG = "#FCE0D2"
+BTN_DURAZNO_HOVER = "#F7CEBA"
+BTN_DURAZNO_FG = "#66331B"
 
-# Resumen de totales
-BG_TOTAL_DESTACADO = "#E8F0FE"
-FG_TOTAL_DESTACADO = "#1A365D"
+# Lavanda Pastel (Cambiar clave / Acciones especiales)
+BTN_LAVANDA_BG = "#E3DCF4"
+BTN_LAVANDA_HOVER = "#D4C8EB"
+BTN_LAVANDA_FG = "#442C5D"
+
+# Resumen de totales y etiquetas destacadas
+BG_TOTAL_DESTACADO = "#EAE2D5"
+FG_TOTAL_DESTACADO = "#2E221E"
+BG_BADGE = "#EAE2D5"
+FG_BADGE = "#3B2E2A"

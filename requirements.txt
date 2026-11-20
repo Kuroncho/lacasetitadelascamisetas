@@ -1,2 +1,5 @@
-# Única dependencia externa: el conector oficial de MySQL (funciona también con MariaDB de XAMPP).
+# Conector oficial de MySQL (funciona también con MariaDB de XAMPP):
 mysql-connector-python==26.10.0
+
+# Procesamiento y escalado en alta definición del logo de la aplicación (opcional, con fallback nativo en Tkinter):
+Pillow>=10.0.0
