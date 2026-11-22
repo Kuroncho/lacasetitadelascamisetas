@@ -7,7 +7,7 @@ import webbrowser
 from tkinter import messagebox, ttk
 
 from views import colores
-from views.imagenes import aplicar_icono_ventana
+from views.imagenes import aplicar_icono_ventana, cargar_logo
 from views.texto_boleta import generar_boleta, generar_url_whatsapp
 
 # Tipografía elegante: serif clásico (Georgia) para títulos y marca; Segoe UI para datos y botones.
@@ -123,21 +123,29 @@ def mostrar_boleta(padre, venta):
     encabezado = tk.Frame(ventana, bg=colores.BG_HEADER, pady=12, padx=16)
     encabezado.pack(fill="x")
 
+    logo_img = cargar_logo(38, 38)
+    if logo_img:
+        ventana._logo_ref = logo_img
+        tk.Label(encabezado, image=logo_img, bg=colores.BG_HEADER).pack(side="left", padx=(0, 12))
+
+    titulos = tk.Frame(encabezado, bg=colores.BG_HEADER)
+    titulos.pack(side="left")
+
     tk.Label(
-        encabezado,
+        titulos,
         text="LA CASERITA DE LAS CAMISETAS",
         font=FUENTE_TITULO,
         bg=colores.BG_HEADER,
         fg=colores.FG_HEADER,
-    ).pack()
+    ).pack(anchor="w")
 
     tk.Label(
-        encabezado,
+        titulos,
         text=f"Comprobante Electrónico · Folio #{venta.folio}",
         font=FUENTE_SUBTITULO,
         bg=colores.BG_HEADER,
         fg=colores.TEXTO_MUTED,
-    ).pack(pady=(2, 0))
+    ).pack(anchor="w", pady=(2, 0))
 
     # Área de texto de la boleta
     caja_texto = tk.Frame(ventana, bg=colores.BG_TARJETA, padx=12, pady=10, relief="groove", bd=1)

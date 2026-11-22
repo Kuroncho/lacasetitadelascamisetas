@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <!-- Filtros y estilos para diseño pastel artesanal -->
+    <style>
+      .logo-title {
+        font-family: 'Georgia', 'Playfair Display', serif;
+        font-size: 34px;
+        font-weight: 700;
+        letter-spacing: 5px;
+        fill: #2C222D;
+      }
+      .logo-subtitle {
+        font-family: 'Georgia', 'Playfair Display', serif;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 6px;
+        fill: #2C222D;
+      }
+      .line-dark {
+        stroke: #2C222D;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .line-needle {
+        stroke: #2C222D;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </defs>
+
+  <!-- Tipografía de marca -->
+  <text x="250" y="112" text-anchor="middle" class="logo-title">caseritaAPP</text>
+  <text x="250" y="168" text-anchor="middle" class="logo-subtitle">MADE WITH</text>
+  <text x="250" y="192" text-anchor="middle" class="logo-subtitle">LOVE</text>
+
+  <!-- Agujas cruzadas (Tonos Azul Serenity Pastel #C8DEF3) -->
+  <g id="needles">
+    <!-- Aguja 1: Superior Izquierda a Inferior Derecha -->
+    <!-- Extremo superior izquierdo con ojo de aguja -->
+    <path d="M 152 216 L 195 259 L 206 248 L 163 205 C 158 200 150 205 147 210 C 145 214 148 221 152 216 Z"
+          fill="#C8DEF3" stroke="#2C222D" stroke-width="2.2" stroke-linejoin="round"/>
+    <!-- Ojo de la aguja 1 -->
+    <ellipse cx="168" cy="223" rx="14" ry="3.5" transform="rotate(45 168 223)"
+             fill="#FFFFFF" stroke="#2C222D" stroke-width="1.8"/>
+    <!-- Punta inferior derecha aguja 1 -->
+    <path d="M 293 357 L 354 418 L 350 422 L 285 365 Z"
+          fill="#C8DEF3" stroke="#2C222D" stroke-width="2.2"/>
+
+    <!-- Aguja 2: Superior Derecha a Inferior Izquierda -->
+    <!-- Extremo superior derecho con ojo de aguja -->
+    <path d="M 348 216 L 305 259 L 294 248 L 337 205 C 342 200 350 205 353 210 C 355 214 352 221 348 216 Z"
+          fill="#C8DEF3" stroke="#2C222D" stroke-width="2.2" stroke-linejoin="round"/>
+    <!-- Ojo de la aguja 2 -->
+    <ellipse cx="332" cy="223" rx="14" ry="3.5" transform="rotate(-45 332 223)"
+             fill="#FFFFFF" stroke="#2C222D" stroke-width="1.8"/>
+    <!-- Punta inferior izquierda aguja 2 -->
+    <path d="M 207 357 L 146 418 L 150 422 L 215 365 Z"
+          fill="#C8DEF3" stroke="#2C222D" stroke-width="2.2"/>
+  </g>
+
+  <!-- Corona de Hojas (Verde Menta / Salvia Pastel #BAE2CD) -->
+  <g id="laurel-wreath">
+    <!-- Tallo Izquierdo -->
+    <path d="M 88 152 Q 78 240 190 328" fill="none" stroke="#2C222D" stroke-width="2" stroke-linecap="round"/>
+    <!-- Hojas Izquierdas -->
+    <path d="M 88 152 Q 95 138 112 144 Q 104 158 88 152 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 82 178 Q 70 168 76 154 Q 92 165 82 178 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 84 198 Q 96 186 112 192 Q 102 206 84 198 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 80 226 Q 66 218 70 202 Q 88 212 80 226 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 86 244 Q 100 234 116 242 Q 106 256 86 244 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 92 272 Q 80 266 84 250 Q 100 258 92 272 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 104 288 Q 118 280 134 290 Q 122 302 104 288 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 116 312 Q 106 304 112 290 Q 128 298 116 312 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 136 322 Q 150 316 166 328 Q 152 338 136 322 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 154 336 Q 146 328 154 316 Q 168 324 154 336 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+
+    <!-- Tallo Derecho -->
+    <path d="M 412 152 Q 422 240 310 328" fill="none" stroke="#2C222D" stroke-width="2" stroke-linecap="round"/>
+    <!-- Hojas Derechas -->
+    <path d="M 412 152 Q 405 138 388 144 Q 396 158 412 152 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 418 178 Q 430 168 424 154 Q 408 165 418 178 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 416 198 Q 404 186 388 192 Q 398 206 416 198 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 420 226 Q 434 218 430 202 Q 412 212 420 226 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 414 244 Q 400 234 384 242 Q 394 256 414 244 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 408 272 Q 420 266 416 250 Q 400 258 408 272 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 396 288 Q 382 280 366 290 Q 378 302 396 288 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 384 312 Q 394 304 388 290 Q 372 298 384 312 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 364 322 Q 350 316 334 328 Q 348 338 364 322 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+    <path d="M 346 336 Q 354 328 346 316 Q 332 324 346 336 Z" fill="#BAE2CD" stroke="#2C222D" stroke-width="1.8"/>
+  </g>
+
+  <!-- Botón Central Artesanal -->
+  <g id="button" transform="translate(250, 310)">
+    <!-- Borde exterior (Rosa Blush Pastel #F7CAD5) -->
+    <circle cx="0" cy="0" r="63" fill="#F7CAD5" stroke="#2C222D" stroke-width="2.6"/>
+    <!-- Relieve circular intermedio -->
+    <circle cx="0" cy="0" r="50" fill="none" stroke="#2C222D" stroke-width="1.6" stroke-dasharray="3,2"/>
+    <!-- Cara interior del botón (Durazno / Crema Pastel #FDE8DD) -->
+    <circle cx="0" cy="0" r="48" fill="#FDE8DD" stroke="#2C222D" stroke-width="2"/>
+
+    <!-- 4 Agujeros del botón con reborde -->
+    <circle cx="-16" cy="-16" r="6" fill="#FFFFFF" stroke="#2C222D" stroke-width="2"/>
+    <circle cx="16" cy="-16" r="6" fill="#FFFFFF" stroke="#2C222D" stroke-width="2"/>
+    <circle cx="-16" cy="16" r="6" fill="#FFFFFF" stroke="#2C222D" stroke-width="2"/>
+    <circle cx="16" cy="16" r="6" fill="#FFFFFF" stroke="#2C222D" stroke-width="2"/>
+
+    <!-- Costura en cruz (Hilo Lavanda Pastel #735A96) -->
+    <line x1="-16" y1="-16" x2="16" y2="16" stroke="#735A96" stroke-width="5" stroke-linecap="round"/>
+    <line x1="16" y1="-16" x2="-16" y2="16" stroke="#735A96" stroke-width="5" stroke-linecap="round"/>
+    <!-- Bordes oscuros para el hilo cosido -->
+    <line x1="-16" y1="-16" x2="16" y2="16" stroke="#2C222D" stroke-width="1.4" stroke-dasharray="2,3"/>
+    <line x1="16" y1="-16" x2="-16" y2="16" stroke="#2C222D" stroke-width="1.4" stroke-dasharray="2,3"/>
+  </g>
+</svg>
