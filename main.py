@@ -2,32 +2,53 @@
 La Caserita de las Camisetas: sistema de ventas e inventario.
 Para ejecutar: py main.py
 
-Estructura MVC:
-  models/       datos y reglas propias de cada objeto (y el guardado en JSON)
-  controllers/  reglas del negocio: reciben lo que pide la pantalla y modifican el modelo
-  views/        pantallas Tkinter: muestran datos y llaman a los controladores
+Estructura Modelo-Vista-Controlador (MVC):
+  models/       datos, lógica de negocio y persistencia en MySQL (vía repositorios) y JSON
+  controllers/  reglas del negocio: reciben peticiones de las vistas y modifican el modelo
+  views/        pantallas Tkinter: muestran datos e interactúan con el usuario
 """
 
-# Cada 'import' trae lo necesario desde otro archivo. Path sirve para armar rutas de carpetas sin errores.
 from pathlib import Path
 
-# Se traen las 3 capas: controladores (reglas), almacén (datos) y la ventana (pantalla).
 from controllers import Controladores
 from models.almacen import Almacen
+from models.conexion_bd import ConexionBD
+from models.excepciones import ErrorBaseDatos
 from models.gestor_datos import GestorDatos
 from views.app import Aplicacion
 
 
-# Función principal: crea las piezas y abre la ventana. Se conectan de adentro hacia afuera: datos -> reglas -> pantalla.
 def main():
-    # __file__ es la ruta de este archivo; .parent es su carpeta. Los JSON se guardan en la subcarpeta 'datos'.
-    carpeta_datos = Path(__file__).parent / "datos"
-    # El almacén carga los JSON (o crea datos de ejemplo la primera vez).
-    almacen = Almacen(GestorDatos(carpeta_datos))
-    # Se crea la ventana con los controladores y mainloop() la mantiene abierta, esperando clics, hasta que se cierra.
+    """Función principal: conecta las capas de la aplicación y lanza la interfaz."""
+    raiz = Path(__file__).parent
+    carpeta_datos = raiz / "datos"
+    gestor_json = GestorDatos(carpeta_datos)
+
+    # 1. Intentar conexión a la base de datos MySQL (administrable desde MySQL Workbench)
+    conexion_mysql = None
+    aviso_conexion = None
+
+    try:
+        config = ConexionBD.leer_configuracion(raiz)
+        conexion_mysql = ConexionBD(config)
+        # Prepara la base de datos y crea las tablas si no existen
+        conexion_mysql.preparar()
+    except (ErrorBaseDatos, Exception) as error:
+        conexion_mysql = None
+        aviso_conexion = (
+            "No se pudo conectar a MySQL Workbench. Se utilizará el almacenamiento local.\n\n"
+            "Para conectar con Workbench, revisa que el servicio MySQL esté iniciado y "
+            "configura tu contraseña en 'config_bd.local.ini' o 'config_bd.ini'."
+        )
+
+    # 2. Inicializar el Almacén con MySQL (y respaldo en JSON)
+    almacen = Almacen(gestor=gestor_json, conexion=conexion_mysql)
+    if aviso_conexion:
+        almacen.avisos.append(aviso_conexion)
+
+    # 3. Iniciar la aplicación gráfica
     Aplicacion(Controladores(almacen)).mainloop()
 
 
-# Esto es verdadero solo cuando se ejecuta este archivo directamente (py main.py), y no cuando otro archivo lo importa.
 if __name__ == "__main__":
     main()

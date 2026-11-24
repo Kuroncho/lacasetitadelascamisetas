@@ -1,20 +1,29 @@
 """
 Almacén de datos del sistema.
 
-Reúne las listas del negocio (prendas, clientes, usuarios y ventas) y las guarda y carga desde
-archivos JSON. Solo conserva los datos: las reglas del negocio las aplican los controladores.
+Reúne las colecciones del negocio (prendas, clientes, usuarios y ventas).
+Soporta persistencia directa en base de datos relacional MySQL / MariaDB (vía repositorios)
+y respaldo en archivos JSON para entornos de prueba.
 """
 
-# El almacén usa al GestorDatos para leer y escribir; él decide QUÉ guardar y el gestor CÓMO.
+from pathlib import Path
+from .conexion_bd import ConexionBD
+from .excepciones import ErrorBaseDatos
 from .gestor_datos import GestorDatos
-from .prenda import PrendaEstandar, PrendaTermica, RopaInterior, prenda_desde_dict
+from .prenda import Prenda, PrendaEstandar, PrendaTermica, RopaInterior, prenda_desde_dict
+from .repositorios import (
+    RepositorioClientes,
+    RepositorioIntentos,
+    RepositorioPrendas,
+    RepositorioUsuarios,
+    RepositorioVentas,
+)
 from .usuario import Administrador, Cliente, Empleado, Vendedor
 from .venta import Venta
 
 
-# Datos de ejemplo que se crean la primera vez que se abre el sistema (o si un archivo se dañó). Aquí están los usuarios de prueba.
 def _datos_iniciales() -> dict:
-    """Datos de ejemplo que se crean la primera vez que se abre el sistema."""
+    """Datos de ejemplo iniciales que se crean la primera vez que se abre el sistema."""
     return {
         "prendas": [
             PrendaTermica("TER-001", "Beatle", "M", 12000, 10, "Tortuga", "Alto"),
@@ -35,61 +44,207 @@ def _datos_iniciales() -> dict:
     }
 
 
-# El almacén reúne las 4 listas del negocio (prendas, clientes, usuarios y ventas) y las guarda en JSON.
-# Solo conserva datos: las reglas ("no se puede vender sin stock") las aplican los controladores.
 class Almacen:
-    def __init__(self, gestor: GestorDatos):
-        self._gestor = gestor
-        # Lista de problemas al cargar (archivos dañados). La pantalla los muestra al abrir el programa.
-        self.avisos: list[str] = []  # Problemas de carga que la interfaz debe mostrar
-        iniciales = _datos_iniciales()
-        # Cada lista se carga desde su archivo JSON. Si el archivo no existe, se parte con los datos de ejemplo.
-        self.prendas = self._cargar("prendas", prenda_desde_dict, iniciales["prendas"])
-        self.clientes = self._cargar("clientes", Cliente.desde_dict, iniciales["clientes"])
-        self.usuarios = self._cargar("usuarios", Empleado.desde_dict, iniciales["usuarios"])
-        self.ventas = self._cargar("ventas", Venta.desde_dict, [])
+    """
+    Coordina la persistencia y consulta de las colecciones del negocio.
+    Usa repositorios para comunicarse con MySQL y puede usar GestorDatos como respaldo.
+    """
 
-    # Lee un archivo JSON y convierte cada diccionario en un objeto (con la función 'crear_objeto').
-    # Si falta el archivo, se crea con los datos de ejemplo. Si está dañado, se aparta y se crea uno nuevo.
-    def _cargar(self, nombre: str, crear_objeto, iniciales: list) -> list:
-        """Lee un archivo JSON. Si falta o está dañado, parte con los datos iniciales."""
+    def __init__(self, gestor: GestorDatos | None = None, conexion: ConexionBD | None = None):
+        self._gestor = gestor
+        self._conexion = conexion
+        self.avisos: list[str] = []
+
+        # Repositorios para cada tabla de MySQL
+        self.repo_prendas: RepositorioPrendas | None = None
+        self.repo_clientes: RepositorioClientes | None = None
+        self.repo_usuarios: RepositorioUsuarios | None = None
+        self.repo_ventas: RepositorioVentas | None = None
+        self.repo_intentos: RepositorioIntentos | None = None
+
+        if self._conexion is not None:
+            self._configurar_repositorios()
+            self._cargar_desde_bd()
+        elif self._gestor is not None:
+            self._cargar_desde_json()
+        else:
+            iniciales = _datos_iniciales()
+            self.prendas = list(iniciales["prendas"])
+            self.clientes = list(iniciales["clientes"])
+            self.usuarios = list(iniciales["usuarios"])
+            self.ventas = []
+
+    def _configurar_repositorios(self) -> None:
+        """Inicializa los repositorios orientados a objetos con la conexión MySQL."""
+        self.repo_prendas = RepositorioPrendas(self._conexion)
+        self.repo_clientes = RepositorioClientes(self._conexion)
+        self.repo_usuarios = RepositorioUsuarios(self._conexion)
+        self.repo_ventas = RepositorioVentas(self._conexion)
+        self.repo_intentos = RepositorioIntentos(self._conexion)
+
+    def _cargar_desde_bd(self) -> None:
+        """Carga las colecciones desde MySQL o puebla los datos iniciales si está vacía."""
+        try:
+            self._conexion.preparar()
+
+            # Si las tablas principales están vacías, se insertan los datos de prueba iniciales
+            if (
+                self.repo_prendas.esta_vacio()
+                and self.repo_clientes.esta_vacio()
+                and self.repo_usuarios.esta_vacio()
+            ):
+                iniciales = _datos_iniciales()
+                with self._conexion.transaccion() as cursor:
+                    for prenda in iniciales["prendas"]:
+                        self.repo_prendas.insertar(cursor, prenda)
+                    for cliente in iniciales["clientes"]:
+                        self.repo_clientes.insertar(cursor, cliente)
+                    for usuario in iniciales["usuarios"]:
+                        self.repo_usuarios.insertar(cursor, usuario)
+
+            self.prendas = self.repo_prendas.cargar_todos()
+            self.clientes = self.repo_clientes.cargar_todos()
+            self.usuarios = self.repo_usuarios.cargar_todos()
+            self.ventas = self.repo_ventas.cargar_todos()
+
+            # Asegurar regla de negocio: siempre debe existir al menos un administrador
+            if not any(u.puede_administrar() for u in self.usuarios):
+                admin_defecto = Administrador("33.333.333-3", "Marisol Mena", "marisol", "admin123")
+                with self._conexion.transaccion() as cursor:
+                    self.repo_usuarios.insertar(cursor, admin_defecto)
+                self.usuarios.append(admin_defecto)
+
+        except ErrorBaseDatos as error:
+            self.avisos.append(str(error))
+            # Si falla la base de datos y hay un gestor JSON, se recuperan los datos locales
+            if self._gestor is not None:
+                self._cargar_desde_json()
+            else:
+                iniciales = _datos_iniciales()
+                self.prendas = list(iniciales["prendas"])
+                self.clientes = list(iniciales["clientes"])
+                self.usuarios = list(iniciales["usuarios"])
+                self.ventas = []
+
+    def _cargar_desde_json(self) -> None:
+        """Carga tradicional desde archivos JSON para compatibilidad y pruebas unitarias."""
+        iniciales = _datos_iniciales()
+        self.prendas = self._cargar_coleccion_json("prendas", prenda_desde_dict, iniciales["prendas"])
+        self.clientes = self._cargar_coleccion_json("clientes", Cliente.desde_dict, iniciales["clientes"])
+        self.usuarios = self._cargar_coleccion_json("usuarios", Empleado.desde_dict, iniciales["usuarios"])
+        self.ventas = self._cargar_coleccion_json("ventas", Venta.desde_dict, [])
+
+    def _cargar_coleccion_json(self, nombre: str, fabricador, datos_defecto: list) -> list:
+        """Lee un archivo JSON individual protegiendo contra archivos dañados."""
         if self._gestor.existe(nombre):
-            # 'try' prueba este bloque. Si algo falla con alguno de los errores listados abajo, Python salta directo al 'except'.
             try:
-                objetos = [crear_objeto(datos) for datos in self._gestor.cargar(nombre)]
-                # Regla extra: el sistema siempre debe tener al menos un administrador, o nadie podría gestionarlo.
+                objetos = [fabricador(d) for d in self._gestor.cargar(nombre)]
                 if nombre != "usuarios" or any(u.puede_administrar() for u in objetos):
                     return objetos
-                raise ValueError("No hay ningún administrador.")
-            # Atrapa los errores típicos de un archivo dañado: faltan claves, datos de tipo incorrecto, texto que no es JSON, etc.
             except (ValueError, KeyError, TypeError, AttributeError):
                 self._gestor.apartar_corrupto(nombre)
-                self.avisos.append(f"El archivo {nombre}.json estaba dañado. Se guardó como {nombre}.corrupto y se creó uno nuevo.")
+                self.avisos.append(f"El archivo {nombre}.json estaba dañado. Se creó uno nuevo.")
 
-        self._gestor.guardar(nombre, [objeto.a_dict() for objeto in iniciales])
-        return iniciales
+        self._gestor.guardar(nombre, [obj.a_dict() for obj in datos_defecto])
+        return datos_defecto
 
-    # Guarda en JSON una de las listas. getattr(self, nombre) obtiene el atributo cuyo nombre llega en el texto ('prendas', 'clientes'...).
     def guardar(self, nombre: str) -> None:
-        """Guarda en JSON la lista indicada: 'prendas', 'clientes', 'usuarios' o 'ventas'."""
-        coleccion = getattr(self, nombre)
-        self._gestor.guardar(nombre, [objeto.a_dict() for objeto in coleccion])
+        """
+        Persiste los cambios de la colección indicada en MySQL y/o JSON.
+        nombre puede ser: 'prendas', 'clientes', 'usuarios' o 'ventas'.
+        """
+        # Si hay conexión a MySQL activa, sincroniza con la base de datos
+        if self._conexion is not None:
+            self._guardar_en_bd(nombre)
 
-    # --- Búsquedas: devuelven el objeto o None si no existe ---
-    # Las 4 búsquedas funcionan igual: next(...) entrega el primer elemento que cumple la condición,
-    # o None (nada) si no hay ninguno. Quien llame debe revisar si el resultado es None.
-    def buscar_prenda(self, codigo: str):
+        # Si hay gestor de datos JSON disponible, mantiene el respaldo local actualizado
+        if self._gestor is not None:
+            coleccion = getattr(self, nombre, [])
+            self._gestor.guardar(nombre, [obj.a_dict() for obj in coleccion])
+
+    def _guardar_en_bd(self, nombre: str) -> None:
+        """Aplica las consultas SQL de actualización en MySQL según la colección modificada."""
+        try:
+            with self._conexion.transaccion() as cursor:
+                if nombre == "prendas":
+                    # Obtener códigos actuales en base de datos para saber cuáles agregar o actualizar
+                    codigos_bd = {
+                        fila["codigo"]
+                        for fila in self._conexion.consultar("SELECT codigo FROM prendas")
+                    }
+                    codigos_memoria = {p.codigo for p in self.prendas}
+
+                    # Eliminar las prendas que se hayan borrado
+                    for codigo_eliminar in codigos_bd - codigos_memoria:
+                        self.repo_prendas.eliminar(cursor, codigo_eliminar)
+
+                    # Insertar o actualizar stock y precios de las prendas en memoria
+                    for prenda in self.prendas:
+                        if prenda.codigo in codigos_bd:
+                            self.repo_prendas.actualizar_stock(cursor, prenda.codigo, prenda.stock)
+                            self.repo_prendas.actualizar_precio(cursor, prenda.codigo, prenda.precio_base)
+                        else:
+                            self.repo_prendas.insertar(cursor, prenda)
+
+                elif nombre == "clientes":
+                    ruts_bd = {
+                        fila["rut"]
+                        for fila in self._conexion.consultar("SELECT rut FROM clientes")
+                    }
+                    ruts_memoria = {c.rut for c in self.clientes}
+
+                    for rut_eliminar in ruts_bd - ruts_memoria:
+                        self.repo_clientes.eliminar(cursor, rut_eliminar)
+
+                    for cliente in self.clientes:
+                        if cliente.rut in ruts_bd:
+                            self.repo_clientes.actualizar(cursor, cliente)
+                        else:
+                            self.repo_clientes.insertar(cursor, cliente)
+
+                elif nombre == "usuarios":
+                    usuarios_bd = {
+                        fila["usuario"]
+                        for fila in self._conexion.consultar("SELECT usuario FROM usuarios")
+                    }
+                    usuarios_memoria = {u.usuario for u in self.usuarios}
+
+                    for usuario_eliminar in usuarios_bd - usuarios_memoria:
+                        self.repo_usuarios.eliminar(cursor, usuario_eliminar)
+
+                    for usuario in self.usuarios:
+                        if usuario.usuario in usuarios_bd:
+                            self.repo_usuarios.actualizar_clave(cursor, usuario)
+                        else:
+                            self.repo_usuarios.insertar(cursor, usuario)
+
+                elif nombre == "ventas":
+                    folios_bd = {
+                        fila["folio"]
+                        for fila in self._conexion.consultar("SELECT folio FROM ventas")
+                    }
+                    for venta in self.ventas:
+                        if venta.folio in folios_bd:
+                            self.repo_ventas.actualizar_estado(cursor, venta.folio, venta.estado)
+                        else:
+                            self.repo_ventas.insertar(cursor, venta)
+
+        except ErrorBaseDatos as error:
+            # Si MySQL falla, se anota el aviso para que la interfaz gráfica pueda alertar al usuario
+            self.avisos.append(str(error))
+
+    # --- Búsquedas en memoria ---
+    def buscar_prenda(self, codigo: str) -> Prenda | None:
         return next((p for p in self.prendas if p.codigo == codigo), None)
 
-    def buscar_cliente(self, rut: str):
+    def buscar_cliente(self, rut: str) -> Cliente | None:
         return next((c for c in self.clientes if c.rut == rut), None)
 
-    def buscar_usuario(self, usuario: str):
+    def buscar_usuario(self, usuario: str) -> Empleado | None:
         return next((u for u in self.usuarios if u.usuario == usuario), None)
 
-    def buscar_venta(self, folio: int):
+    def buscar_venta(self, folio: int) -> Venta | None:
         return next((v for v in self.ventas if v.folio == folio), None)
 
-    # Todas las ventas de un cliente: la lista se arma con una comprensión de listas (ver GUIA_DE_SINTAXIS.md).
     def ventas_de(self, rut: str) -> list[Venta]:
         return [venta for venta in self.ventas if venta.cliente_rut == rut]

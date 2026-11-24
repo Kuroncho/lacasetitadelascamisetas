@@ -133,5 +133,50 @@ class TestConexionBD(unittest.TestCase):
         self.assertEqual(self.contar("clientes"), 0)
 
 
+@unittest.skipUnless(MYSQL_DISPONIBLE, "MySQL no está disponible")
+class TestRepositorios(unittest.TestCase):
+    def setUp(self):
+        from models.repositorios import (
+            RepositorioClientes,
+            RepositorioIntentos,
+            RepositorioPrendas,
+            RepositorioUsuarios,
+            RepositorioVentas,
+        )
+        self.conexion = conexion_limpia()
+        self.repo_prendas = RepositorioPrendas(self.conexion)
+        self.repo_clientes = RepositorioClientes(self.conexion)
+        self.repo_usuarios = RepositorioUsuarios(self.conexion)
+        self.repo_ventas = RepositorioVentas(self.conexion)
+        self.repo_intentos = RepositorioIntentos(self.conexion)
+
+    def test_prenda_insertar_y_cargar(self):
+        from models.prenda import PrendaTermica
+        prenda = PrendaTermica("TER-999", "Beatle Test", "M", 12000, 10, "Tortuga", "Alto")
+        with self.conexion.transaccion() as cursor:
+            self.repo_prendas.insertar(cursor, prenda)
+        cargadas = self.repo_prendas.cargar_todos()
+        self.assertEqual(len(cargadas), 1)
+        self.assertEqual(cargadas[0].codigo, "TER-999")
+        self.assertEqual(cargadas[0].nombre, "Beatle test")
+
+    def test_cliente_crud(self):
+        from models.usuario import Cliente
+        cliente = Cliente("11.111.111-1", "Juan Perez", "+56911223344", "juan@correo.cl")
+        with self.conexion.transaccion() as cursor:
+            self.repo_clientes.insertar(cursor, cliente)
+        self.assertEqual(len(self.repo_clientes.cargar_todos()), 1)
+
+        cliente.nombre = "Juan Actualizado"
+        with self.conexion.transaccion() as cursor:
+            self.repo_clientes.actualizar(cursor, cliente)
+        cargado = self.repo_clientes.cargar_todos()[0]
+        self.assertEqual(cargado.nombre, "Juan Actualizado")
+
+        with self.conexion.transaccion() as cursor:
+            self.repo_clientes.eliminar(cursor, cliente.rut)
+        self.assertEqual(len(self.repo_clientes.cargar_todos()), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
