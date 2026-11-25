@@ -200,5 +200,83 @@ class TestRepositorios(unittest.TestCase):
         self.assertEqual(len(self.repo_clientes.cargar_todos()), 0)
 
 
+@unittest.skipUnless(MYSQL_DISPONIBLE, "MySQL no está disponible")
+class TestBloqueoPersistente(unittest.TestCase):
+    """HU16: el bloqueo por intentos fallidos se guarda en MySQL y sobrevive a un reinicio de la aplicación."""
+
+    def setUp(self):
+        from controllers.controlador_usuarios import ControladorUsuarios
+        from models.almacen import Almacen
+        self.ControladorUsuarios = ControladorUsuarios
+        self.Almacen = Almacen
+        self.conexion = conexion_limpia()
+        # Primer "arranque": se crean los datos iniciales (usuario marisol / admin123).
+        self.ctrl = ControladorUsuarios(Almacen(conexion=self.conexion), reloj=lambda: 1000.0)
+
+    def reiniciar(self, ahora):
+        """Simula cerrar y volver a abrir la aplicación: un almacén y un controlador nuevos sobre la misma base."""
+        return self.ControladorUsuarios(self.Almacen(conexion=self.conexion), reloj=lambda: ahora)
+
+    def fallar(self, ctrl, veces, usuario="marisol"):
+        for _ in range(veces):
+            with self.assertRaises(ValueError):
+                ctrl.iniciar_sesion(usuario, "clave-mala")
+
+    def test_el_bloqueo_sigue_vigente_despues_de_reiniciar(self):
+        self.fallar(self.ctrl, 5)
+        nuevo = self.reiniciar(1100.0)  # 100 segundos despues, con la clave correcta
+        with self.assertRaises(ValueError) as contexto:
+            nuevo.iniciar_sesion("marisol", "admin123")
+        self.assertIn("bloqueada", str(contexto.exception))
+
+    def test_se_desbloquea_a_los_10_minutos_aunque_se_haya_reiniciado(self):
+        self.fallar(self.ctrl, 5)
+        nuevo = self.reiniciar(1000.0 + 10 * 60 + 1)
+        self.assertEqual(nuevo.iniciar_sesion("marisol", "admin123").usuario, "marisol")
+
+    def test_un_inicio_correcto_reinicia_el_contador(self):
+        self.fallar(self.ctrl, 4)
+        self.ctrl.iniciar_sesion("marisol", "admin123")
+        fila = self.conexion.consultar("SELECT fallidos FROM intentos_login WHERE usuario = 'marisol'")
+        self.assertEqual(fila[0]["fallidos"], 0)
+
+    def test_los_intentos_con_usuario_inexistente_tambien_se_registran(self):
+        self.fallar(self.ctrl, 1, usuario="fantasma")
+        fila = self.conexion.consultar("SELECT fallidos FROM intentos_login WHERE usuario = 'fantasma'")
+        self.assertEqual(fila[0]["fallidos"], 1)
+
+
+class TestRespaldoJson(unittest.TestCase):
+    """HU14: con MySQL activo el JSON no se toca; solo se usa como respaldo si MySQL falla o no existe."""
+
+    def setUp(self):
+        import tempfile
+        from models.gestor_datos import GestorDatos
+        self.carpeta = Path(tempfile.mkdtemp())
+        self.gestor = GestorDatos(self.carpeta)
+
+    def test_sin_mysql_se_guarda_en_json(self):
+        from models.almacen import Almacen
+        almacen = Almacen(gestor=self.gestor)
+        almacen.guardar("prendas")
+        self.assertTrue((self.carpeta / "prendas.json").exists())
+
+    def test_si_mysql_falla_se_guarda_en_json_de_emergencia(self):
+        from models.almacen import Almacen
+        conexion = ConexionBD({**config_pruebas(), "puerto": 1})  # servidor inalcanzable
+        almacen = Almacen(gestor=self.gestor, conexion=conexion)
+        (self.carpeta / "prendas.json").unlink(missing_ok=True)
+        almacen.guardar("prendas")
+        self.assertTrue((self.carpeta / "prendas.json").exists())
+
+    @unittest.skipUnless(MYSQL_DISPONIBLE, "MySQL no está disponible")
+    def test_con_mysql_no_se_escribe_el_json(self):
+        from models.almacen import Almacen
+        almacen = Almacen(gestor=self.gestor, conexion=conexion_limpia())
+        for nombre in ("prendas", "clientes", "usuarios", "ventas"):
+            almacen.guardar(nombre)
+        self.assertEqual(list(self.carpeta.glob("*.json")), [])
+
+
 if __name__ == "__main__":
     unittest.main()

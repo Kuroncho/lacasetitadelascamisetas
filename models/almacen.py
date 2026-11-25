@@ -54,6 +54,8 @@ class Almacen:
         self._gestor = gestor
         self._conexion = conexion
         self.avisos: list[str] = []
+        # Estado de los intentos de login en memoria: se usa cuando no hay MySQL (o si falla) y para no perder el conteo.
+        self._intentos_memoria: dict[str, dict] = {}
 
         # Repositorios para cada tabla de MySQL
         self.repo_prendas: RepositorioPrendas | None = None
@@ -153,17 +155,42 @@ class Almacen:
         Persiste los cambios de la colección indicada en MySQL y/o JSON.
         nombre puede ser: 'prendas', 'clientes', 'usuarios' o 'ventas'.
         """
-        # Si hay conexión a MySQL activa, sincroniza con la base de datos
+        # Con MySQL activo, la base de datos es la única fuente de verdad: el JSON no se toca.
+        guardado_en_bd = False
         if self._conexion is not None:
-            self._guardar_en_bd(nombre)
+            guardado_en_bd = self._guardar_en_bd(nombre)
 
-        # Si hay gestor de datos JSON disponible, mantiene el respaldo local actualizado
-        if self._gestor is not None:
+        # El JSON solo se usa cuando no hay MySQL o cuando MySQL falló al guardar (respaldo de emergencia).
+        if self._gestor is not None and not guardado_en_bd:
             coleccion = getattr(self, nombre, [])
             self._gestor.guardar(nombre, [obj.a_dict() for obj in coleccion])
 
-    def _guardar_en_bd(self, nombre: str) -> None:
-        """Aplica las consultas SQL de actualización en MySQL según la colección modificada."""
+    # --- Intentos fallidos de inicio de sesión (HU16) ---
+
+    def estado_intentos(self, usuario: str) -> dict:
+        """Entrega una copia del estado de intentos de un usuario: {'fallidos': n, 'bloqueado_hasta': segundos}."""
+        nombre = usuario.strip().lower()[:30]
+        if self.repo_intentos is not None:
+            try:
+                return dict(self.repo_intentos.obtener(nombre))
+            except ErrorBaseDatos as error:
+                self.avisos.append(str(error))
+        return dict(self._intentos_memoria.get(nombre, {"fallidos": 0, "bloqueado_hasta": 0}))
+
+    def guardar_intentos(self, usuario: str, estado: dict) -> None:
+        """Guarda el estado de intentos de un usuario en MySQL (y en memoria como respaldo)."""
+        nombre = usuario.strip().lower()[:30]
+        self._intentos_memoria[nombre] = dict(estado)
+        if self.repo_intentos is not None:
+            try:
+                with self._conexion.transaccion() as cursor:
+                    self.repo_intentos.guardar(cursor, nombre, estado["fallidos"], estado["bloqueado_hasta"])
+            except ErrorBaseDatos as error:
+                self.avisos.append(str(error))
+
+    def _guardar_en_bd(self, nombre: str) -> bool:
+        """Aplica las consultas SQL de actualización en MySQL según la colección modificada.
+        Devuelve True si se guardó, y False si MySQL falló (entonces guardar() usa el JSON de emergencia)."""
         try:
             with self._conexion.transaccion() as cursor:
                 if nombre == "prendas":
@@ -229,9 +256,12 @@ class Almacen:
                         else:
                             self.repo_ventas.insertar(cursor, venta)
 
+            return True
+
         except ErrorBaseDatos as error:
             # Si MySQL falla, se anota el aviso para que la interfaz gráfica pueda alertar al usuario
             self.avisos.append(str(error))
+            return False
 
     # --- Búsquedas en memoria ---
     def buscar_prenda(self, codigo: str) -> Prenda | None:

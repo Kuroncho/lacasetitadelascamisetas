@@ -23,9 +23,8 @@ class ControladorUsuarios:
     def __init__(self, almacen, reloj=time.time):
         self._almacen = almacen
         self._reloj = reloj
-        # Diccionario en memoria (se pierde al cerrar el programa). La clave es el nombre de usuario y el valor es otro
-        # diccionario con 'fallidos' (intentos seguidos) y 'bloqueado_hasta' (hora de desbloqueo; 0 = no bloqueado).
-        self._intentos = {}
+        # El estado de cada usuario (intentos fallidos y hora de desbloqueo) lo guarda el almacén: en la tabla
+        # 'intentos_login' de MySQL, así el bloqueo sigue vigente aunque se cierre el programa (HU16).
 
     # Entrega una copia de la lista (list(...)). Así la pantalla puede mirarla sin modificar los datos originales.
     @property
@@ -38,9 +37,9 @@ class ControladorUsuarios:
         # strip() quita espacios y lower() pasa a minúsculas, por si la persona los escribió mal.
         nombre = usuario.strip().lower()
         ahora = self._reloj()
-        # setdefault entrega el estado de ese nombre; si no existe todavía, lo crea sin intentos y sin bloqueo.
+        # El almacén entrega el estado de ese nombre; si no existe todavía, lo entrega sin intentos y sin bloqueo.
         # Se hace igual con usuarios que no existen, para no revelar si el usuario existe o no.
-        estado = self._intentos.setdefault(nombre, {"fallidos": 0, "bloqueado_hasta": 0})
+        estado = self._almacen.estado_intentos(nombre)
 
         # Si todavía no llega la hora de desbloqueo, se rechaza aunque la clave sea correcta.
         if estado["bloqueado_hasta"] > ahora:
@@ -49,6 +48,7 @@ class ControladorUsuarios:
         if estado["bloqueado_hasta"] != 0:
             estado["fallidos"] = 0
             estado["bloqueado_hasta"] = 0
+            self._almacen.guardar_intentos(nombre, estado)
 
         # Se busca al usuario.
         empleado = self._almacen.buscar_usuario(nombre)
@@ -59,11 +59,15 @@ class ControladorUsuarios:
             # Al llegar al máximo se fija la hora de desbloqueo: ahora + minutos * 60 segundos.
             if estado["fallidos"] >= MAX_INTENTOS:
                 estado["bloqueado_hasta"] = ahora + MINUTOS_BLOQUEO * 60
+                self._almacen.guardar_intentos(nombre, estado)
                 raise ValueError(self._mensaje_bloqueo(MINUTOS_BLOQUEO * 60))
+            self._almacen.guardar_intentos(nombre, estado)
             raise ValueError("Usuario o clave incorrectos.")
 
         # Inicio de sesión correcto: el contador de fallos vuelve a cero.
-        estado["fallidos"] = 0
+        if estado["fallidos"] != 0:
+            estado["fallidos"] = 0
+            self._almacen.guardar_intentos(nombre, estado)
         return empleado
 
     # Arma el mensaje de bloqueo. math.ceil redondea hacia arriba (si faltan 30 segundos, se muestra 1 minuto).
