@@ -160,6 +160,28 @@ class TestRepositorios(unittest.TestCase):
         self.assertEqual(cargadas[0].codigo, "TER-999")
         self.assertEqual(cargadas[0].nombre, "Beatle test")
 
+    def test_venta_insertar_guarda_cabecera_y_detalle(self):
+        from models.prenda import PrendaEstandar
+        from models.usuario import Cliente
+        from models.venta import Venta
+        prenda = PrendaEstandar("EST-900", "Polera Test", "S", 5000, 10, "Corta")
+        cliente = Cliente("11.111.111-1", "Juan Perez", "+56911223344", "juan@correo.cl")
+        with self.conexion.transaccion() as cursor:
+            self.repo_prendas.insertar(cursor, prenda)
+            self.repo_clientes.insertar(cursor, cliente)
+        venta = Venta("carlos")
+        venta.asignar_cliente(cliente, 5)
+        venta.agregar_prenda(prenda, 2)
+        venta.marcar_pagada(1001, "Efectivo", "")
+        with self.conexion.transaccion() as cursor:
+            self.repo_ventas.insertar(cursor, venta)
+        cabecera = self.conexion.consultar("SELECT descuento_cliente, estado FROM ventas WHERE folio = 1001")
+        self.assertEqual(cabecera[0]["descuento_cliente"], 5)
+        self.assertEqual(cabecera[0]["estado"], "PAGADA")
+        detalle = self.conexion.consultar("SELECT codigo, cantidad FROM detalle_venta WHERE folio = 1001")
+        self.assertEqual(len(detalle), 1)
+        self.assertEqual(detalle[0]["cantidad"], 2)
+
     def test_cliente_crud(self):
         from models.usuario import Cliente
         cliente = Cliente("11.111.111-1", "Juan Perez", "+56911223344", "juan@correo.cl")

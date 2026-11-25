@@ -87,6 +87,10 @@ class Venta:
         return self._cliente_nombre
 
     @property
+    def descuento_cliente(self) -> int:
+        return self._descuento_cliente
+
+    @property
     def estado(self) -> str:
         return self._estado
 
