@@ -199,6 +199,41 @@ class TestRepositorios(unittest.TestCase):
             self.repo_clientes.eliminar(cursor, cliente.rut)
         self.assertEqual(len(self.repo_clientes.cargar_todos()), 0)
 
+    def test_prenda_de_cada_tipo_ida_y_vuelta(self):
+        from models.prenda import PrendaEstandar, PrendaTermica, RopaInterior
+        originales = [
+            RopaInterior("INT-001", "Calzoncillo largo", "XXL", 8000, 2, "Ancho", "Ceñido"),
+            PrendaEstandar("EST-001", "Polera básica", "S", 5000, 20, "Corta"),
+            PrendaTermica("TER-001", "Beatle", "M", 12000, 10, "Tortuga", "Alto"),
+        ]
+        with self.conexion.transaccion() as cursor:
+            for prenda in originales:
+                self.repo_prendas.insertar(cursor, prenda)
+        leidas = self.repo_prendas.cargar_todos()
+        # Se ordenan por código para compararlas en el mismo orden en que vuelven de la base.
+        originales.sort(key=lambda p: p.codigo)
+        self.assertEqual([type(p) for p in leidas], [type(p) for p in originales])
+        self.assertEqual([p.a_dict() for p in leidas], [p.a_dict() for p in originales])
+
+    def test_empleado_conserva_hash_y_rol(self):
+        from models.usuario import Administrador
+        with self.conexion.transaccion() as cursor:
+            self.repo_usuarios.insertar(cursor, Administrador("33.333.333-3", "Marisol Mena", "marisol", "admin123"))
+        leido = self.repo_usuarios.cargar_todos()[0]
+        self.assertTrue(leido.verificar_clave("admin123"))
+        self.assertTrue(leido.puede_administrar())
+
+    def test_tildes_y_enie_sobreviven(self):
+        from models.usuario import Cliente
+        with self.conexion.transaccion() as cursor:
+            self.repo_clientes.insertar(cursor, Cliente("11.111.111-1", "Ñuñoa Pérez", "+56911223344", "nunoa@correo.cl"))
+        self.assertEqual(self.repo_clientes.cargar_todos()[0].nombre, "Ñuñoa Pérez")
+
+    def test_repositorio_es_abstracto(self):
+        from models.repositorios import Repositorio
+        with self.assertRaises(TypeError):
+            Repositorio(self.conexion)
+
 
 @unittest.skipUnless(MYSQL_DISPONIBLE, "MySQL no está disponible")
 class TestBloqueoPersistente(unittest.TestCase):
